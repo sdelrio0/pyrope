@@ -1,0 +1,30 @@
+{
+  "name": "pyrope",
+  "version": "0.1.0",
+  "description": "Pyrope is a Node.js promise-based ORM for GraphQL and AWS DynamoDB.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sdelrio0/pyrope.git"
+  },
+  "keywords": [
+    "aws",
+    "dynamodb",
+    "dynamo",
+    "db",
+    "graphql",
+    "org",
+    "proimse",
+    "model",
+    "schema"
+  ],
+  "author": "Sergio <sdelrio0@gmail.com> (http://xilix.io/)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/sdelrio0/pyrope/issues"
+  },
+  "homepage": "https://github.com/sdelrio0/pyrope#readme"
+}

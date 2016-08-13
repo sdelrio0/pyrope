@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { exec } from 'child_process';
-import * as dynamo from '../src/lib/dynamodb';
+import * as dynamo from '../lib';
 import { v4 } from 'uuid';
 import dynalite from 'dynalite';
 

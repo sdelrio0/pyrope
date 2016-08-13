@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import * as dynamo from '../../../src/lib/dynamodb';
+import * as dynamo from '../../../lib';
 import { findWhere } from 'underscore';
 import { v4 } from 'uuid';
 import { resetDatabase, createUser, createOrganization, createContact, createOperation, createTransaction } from '../../test_helper';

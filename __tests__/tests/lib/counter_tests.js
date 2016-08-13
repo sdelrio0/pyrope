@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import * as dynamo from '../../../src/lib/dynamodb';
+import * as dynamo from '../../../lib';
 import { resetDatabase, createUser, createUserRecursive, createContact } from '../../test_helper';
 
 const TEST_TIMEOUT = 3000;

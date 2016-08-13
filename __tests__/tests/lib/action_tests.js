@@ -1,6 +1,6 @@
 import Promise from 'bluebird';
 import { expect } from 'chai';
-import * as dynamo from '../../../src/lib/dynamodb';
+import * as dynamo from '../../../lib';
 import { sortBy } from 'underscore';
 import { v4 } from 'uuid';
 import { resetDatabase, createUser, createUserRecursive, createContact } from '../../test_helper';

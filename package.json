@@ -1,7 +1,8 @@
 {
+  "version": "0.0.0-semantically-released",
   "name": "pyrope",
   "description": "Pyrope is a Node.js promise-based ORM for GraphQL and AWS DynamoDB.",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
     "prebuild": "rimraf dist",
     "build": "babel --copy-files --out-dir dist lib",

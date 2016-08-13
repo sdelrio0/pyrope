@@ -17,3 +17,6 @@ dist
 # Testing
 coverage
 .nyc_output
+
+# ddm-migrate related files
+schema.json

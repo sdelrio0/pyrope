@@ -1,0 +1,908 @@
+{
+  "20160802185001": {
+    "TableDescription": {
+      "AttributeDefinitions": [
+        {
+          "AttributeName": "uuid",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "username",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "createdAt",
+          "AttributeType": "N"
+        },
+        {
+          "AttributeName": "_table",
+          "AttributeType": "S"
+        }
+      ],
+      "TableName": "_test_users",
+      "KeySchema": [
+        {
+          "AttributeName": "uuid",
+          "KeyType": "HASH"
+        },
+        {
+          "AttributeName": "createdAt",
+          "KeyType": "RANGE"
+        }
+      ],
+      "TableStatus": "CREATING",
+      "CreationDateTime": "2016-08-13T19:43:14.732Z",
+      "ProvisionedThroughput": {
+        "NumberOfDecreasesToday": 0,
+        "ReadCapacityUnits": 1,
+        "WriteCapacityUnits": 1
+      },
+      "TableSizeBytes": 0,
+      "ItemCount": 0,
+      "TableArn": "arn:aws:dynamodb:us-east-1:000000000000:table/_test_users",
+      "GlobalSecondaryIndexes": [
+        {
+          "IndexName": "_tableIndex",
+          "KeySchema": [
+            {
+              "AttributeName": "_table",
+              "KeyType": "HASH"
+            },
+            {
+              "AttributeName": "createdAt",
+              "KeyType": "RANGE"
+            }
+          ],
+          "Projection": {
+            "ProjectionType": "ALL"
+          },
+          "IndexStatus": "CREATING",
+          "ProvisionedThroughput": {
+            "NumberOfDecreasesToday": 0,
+            "ReadCapacityUnits": 1,
+            "WriteCapacityUnits": 1
+          },
+          "IndexSizeBytes": 0,
+          "ItemCount": 0,
+          "IndexArn": "arn:aws:dynamodb:us-east-1:000000000000:table/_test_users/index/_tableIndex"
+        },
+        {
+          "IndexName": "uuidIndex",
+          "KeySchema": [
+            {
+              "AttributeName": "uuid",
+              "KeyType": "HASH"
+            },
+            {
+              "AttributeName": "createdAt",
+              "KeyType": "RANGE"
+            }
+          ],
+          "Projection": {
+            "ProjectionType": "ALL"
+          },
+          "IndexStatus": "CREATING",
+          "ProvisionedThroughput": {
+            "NumberOfDecreasesToday": 0,
+            "ReadCapacityUnits": 1,
+            "WriteCapacityUnits": 1
+          },
+          "IndexSizeBytes": 0,
+          "ItemCount": 0,
+          "IndexArn": "arn:aws:dynamodb:us-east-1:000000000000:table/_test_users/index/uuidIndex"
+        },
+        {
+          "IndexName": "usernameIndex",
+          "KeySchema": [
+            {
+              "AttributeName": "username",
+              "KeyType": "HASH"
+            },
+            {
+              "AttributeName": "createdAt",
+              "KeyType": "RANGE"
+            }
+          ],
+          "Projection": {
+            "ProjectionType": "ALL"
+          },
+          "IndexStatus": "CREATING",
+          "ProvisionedThroughput": {
+            "NumberOfDecreasesToday": 0,
+            "ReadCapacityUnits": 1,
+            "WriteCapacityUnits": 1
+          },
+          "IndexSizeBytes": 0,
+          "ItemCount": 0,
+          "IndexArn": "arn:aws:dynamodb:us-east-1:000000000000:table/_test_users/index/usernameIndex"
+        }
+      ]
+    }
+  },
+  "20160803092601": {
+    "TableDescription": {
+      "AttributeDefinitions": [
+        {
+          "AttributeName": "uuid",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "createdAt",
+          "AttributeType": "N"
+        },
+        {
+          "AttributeName": "_table",
+          "AttributeType": "S"
+        }
+      ],
+      "TableName": "_test_contacts",
+      "KeySchema": [
+        {
+          "AttributeName": "uuid",
+          "KeyType": "HASH"
+        },
+        {
+          "AttributeName": "createdAt",
+          "KeyType": "RANGE"
+        }
+      ],
+      "TableStatus": "CREATING",
+      "CreationDateTime": "2016-08-13T19:43:14.755Z",
+      "ProvisionedThroughput": {
+        "NumberOfDecreasesToday": 0,
+        "ReadCapacityUnits": 1,
+        "WriteCapacityUnits": 1
+      },
+      "TableSizeBytes": 0,
+      "ItemCount": 0,
+      "TableArn": "arn:aws:dynamodb:us-east-1:000000000000:table/_test_contacts",
+      "GlobalSecondaryIndexes": [
+        {
+          "IndexName": "_tableIndex",
+          "KeySchema": [
+            {
+              "AttributeName": "_table",
+              "KeyType": "HASH"
+            },
+            {
+              "AttributeName": "createdAt",
+              "KeyType": "RANGE"
+            }
+          ],
+          "Projection": {
+            "ProjectionType": "ALL"
+          },
+          "IndexStatus": "CREATING",
+          "ProvisionedThroughput": {
+            "NumberOfDecreasesToday": 0,
+            "ReadCapacityUnits": 1,
+            "WriteCapacityUnits": 1
+          },
+          "IndexSizeBytes": 0,
+          "ItemCount": 0,
+          "IndexArn": "arn:aws:dynamodb:us-east-1:000000000000:table/_test_contacts/index/_tableIndex"
+        },
+        {
+          "IndexName": "uuidIndex",
+          "KeySchema": [
+            {
+              "AttributeName": "uuid",
+              "KeyType": "HASH"
+            },
+            {
+              "AttributeName": "createdAt",
+              "KeyType": "RANGE"
+            }
+          ],
+          "Projection": {
+            "ProjectionType": "ALL"
+          },
+          "IndexStatus": "CREATING",
+          "ProvisionedThroughput": {
+            "NumberOfDecreasesToday": 0,
+            "ReadCapacityUnits": 1,
+            "WriteCapacityUnits": 1
+          },
+          "IndexSizeBytes": 0,
+          "ItemCount": 0,
+          "IndexArn": "arn:aws:dynamodb:us-east-1:000000000000:table/_test_contacts/index/uuidIndex"
+        }
+      ]
+    }
+  },
+  "20160808115500": {
+    "TableDescription": {
+      "AttributeDefinitions": [
+        {
+          "AttributeName": "uuid",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "contact",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "user",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "createdAt",
+          "AttributeType": "N"
+        },
+        {
+          "AttributeName": "_table",
+          "AttributeType": "S"
+        }
+      ],
+      "TableName": "_test_contacts_users",
+      "KeySchema": [
+        {
+          "AttributeName": "uuid",
+          "KeyType": "HASH"
+        },
+        {
+          "AttributeName": "createdAt",
+          "KeyType": "RANGE"
+        }
+      ],
+      "TableStatus": "CREATING",
+      "CreationDateTime": "2016-08-13T19:43:14.765Z",
+      "ProvisionedThroughput": {
+        "NumberOfDecreasesToday": 0,
+        "ReadCapacityUnits": 1,
+        "WriteCapacityUnits": 1
+      },
+      "TableSizeBytes": 0,
+      "ItemCount": 0,
+      "TableArn": "arn:aws:dynamodb:us-east-1:000000000000:table/_test_contacts_users",
+      "GlobalSecondaryIndexes": [
+        {
+          "IndexName": "_tableIndex",
+          "KeySchema": [
+            {
+              "AttributeName": "_table",
+              "KeyType": "HASH"
+            },
+            {
+              "AttributeName": "createdAt",
+              "KeyType": "RANGE"
+            }
+          ],
+          "Projection": {
+            "ProjectionType": "ALL"
+          },
+          "IndexStatus": "CREATING",
+          "ProvisionedThroughput": {
+            "NumberOfDecreasesToday": 0,
+            "ReadCapacityUnits": 1,
+            "WriteCapacityUnits": 1
+          },
+          "IndexSizeBytes": 0,
+          "ItemCount": 0,
+          "IndexArn": "arn:aws:dynamodb:us-east-1:000000000000:table/_test_contacts_users/index/_tableIndex"
+        },
+        {
+          "IndexName": "contactIndex",
+          "KeySchema": [
+            {
+              "AttributeName": "contact",
+              "KeyType": "HASH"
+            },
+            {
+              "AttributeName": "createdAt",
+              "KeyType": "RANGE"
+            }
+          ],
+          "Projection": {
+            "ProjectionType": "ALL"
+          },
+          "IndexStatus": "CREATING",
+          "ProvisionedThroughput": {
+            "NumberOfDecreasesToday": 0,
+            "ReadCapacityUnits": 1,
+            "WriteCapacityUnits": 1
+          },
+          "IndexSizeBytes": 0,
+          "ItemCount": 0,
+          "IndexArn": "arn:aws:dynamodb:us-east-1:000000000000:table/_test_contacts_users/index/contactIndex"
+        },
+        {
+          "IndexName": "userIndex",
+          "KeySchema": [
+            {
+              "AttributeName": "user",
+              "KeyType": "HASH"
+            },
+            {
+              "AttributeName": "createdAt",
+              "KeyType": "RANGE"
+            }
+          ],
+          "Projection": {
+            "ProjectionType": "ALL"
+          },
+          "IndexStatus": "CREATING",
+          "ProvisionedThroughput": {
+            "NumberOfDecreasesToday": 0,
+            "ReadCapacityUnits": 1,
+            "WriteCapacityUnits": 1
+          },
+          "IndexSizeBytes": 0,
+          "ItemCount": 0,
+          "IndexArn": "arn:aws:dynamodb:us-east-1:000000000000:table/_test_contacts_users/index/userIndex"
+        }
+      ]
+    }
+  },
+  "20160809131400": {
+    "TableDescription": {
+      "AttributeDefinitions": [
+        {
+          "AttributeName": "uuid",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "createdAt",
+          "AttributeType": "N"
+        },
+        {
+          "AttributeName": "_table",
+          "AttributeType": "S"
+        }
+      ],
+      "TableName": "_test_operations",
+      "KeySchema": [
+        {
+          "AttributeName": "uuid",
+          "KeyType": "HASH"
+        },
+        {
+          "AttributeName": "createdAt",
+          "KeyType": "RANGE"
+        }
+      ],
+      "TableStatus": "CREATING",
+      "CreationDateTime": "2016-08-13T19:43:14.769Z",
+      "ProvisionedThroughput": {
+        "NumberOfDecreasesToday": 0,
+        "ReadCapacityUnits": 1,
+        "WriteCapacityUnits": 1
+      },
+      "TableSizeBytes": 0,
+      "ItemCount": 0,
+      "TableArn": "arn:aws:dynamodb:us-east-1:000000000000:table/_test_operations",
+      "GlobalSecondaryIndexes": [
+        {
+          "IndexName": "_tableIndex",
+          "KeySchema": [
+            {
+              "AttributeName": "_table",
+              "KeyType": "HASH"
+            },
+            {
+              "AttributeName": "createdAt",
+              "KeyType": "RANGE"
+            }
+          ],
+          "Projection": {
+            "ProjectionType": "ALL"
+          },
+          "IndexStatus": "CREATING",
+          "ProvisionedThroughput": {
+            "NumberOfDecreasesToday": 0,
+            "ReadCapacityUnits": 1,
+            "WriteCapacityUnits": 1
+          },
+          "IndexSizeBytes": 0,
+          "ItemCount": 0,
+          "IndexArn": "arn:aws:dynamodb:us-east-1:000000000000:table/_test_operations/index/_tableIndex"
+        },
+        {
+          "IndexName": "uuidIndex",
+          "KeySchema": [
+            {
+              "AttributeName": "uuid",
+              "KeyType": "HASH"
+            },
+            {
+              "AttributeName": "createdAt",
+              "KeyType": "RANGE"
+            }
+          ],
+          "Projection": {
+            "ProjectionType": "ALL"
+          },
+          "IndexStatus": "CREATING",
+          "ProvisionedThroughput": {
+            "NumberOfDecreasesToday": 0,
+            "ReadCapacityUnits": 1,
+            "WriteCapacityUnits": 1
+          },
+          "IndexSizeBytes": 0,
+          "ItemCount": 0,
+          "IndexArn": "arn:aws:dynamodb:us-east-1:000000000000:table/_test_operations/index/uuidIndex"
+        }
+      ]
+    }
+  },
+  "20160809131500": {
+    "TableDescription": {
+      "AttributeDefinitions": [
+        {
+          "AttributeName": "uuid",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "createdAt",
+          "AttributeType": "N"
+        },
+        {
+          "AttributeName": "_table",
+          "AttributeType": "S"
+        }
+      ],
+      "TableName": "_test_transactions",
+      "KeySchema": [
+        {
+          "AttributeName": "uuid",
+          "KeyType": "HASH"
+        },
+        {
+          "AttributeName": "createdAt",
+          "KeyType": "RANGE"
+        }
+      ],
+      "TableStatus": "CREATING",
+      "CreationDateTime": "2016-08-13T19:43:14.777Z",
+      "ProvisionedThroughput": {
+        "NumberOfDecreasesToday": 0,
+        "ReadCapacityUnits": 1,
+        "WriteCapacityUnits": 1
+      },
+      "TableSizeBytes": 0,
+      "ItemCount": 0,
+      "TableArn": "arn:aws:dynamodb:us-east-1:000000000000:table/_test_transactions",
+      "GlobalSecondaryIndexes": [
+        {
+          "IndexName": "_tableIndex",
+          "KeySchema": [
+            {
+              "AttributeName": "_table",
+              "KeyType": "HASH"
+            },
+            {
+              "AttributeName": "createdAt",
+              "KeyType": "RANGE"
+            }
+          ],
+          "Projection": {
+            "ProjectionType": "ALL"
+          },
+          "IndexStatus": "CREATING",
+          "ProvisionedThroughput": {
+            "NumberOfDecreasesToday": 0,
+            "ReadCapacityUnits": 1,
+            "WriteCapacityUnits": 1
+          },
+          "IndexSizeBytes": 0,
+          "ItemCount": 0,
+          "IndexArn": "arn:aws:dynamodb:us-east-1:000000000000:table/_test_transactions/index/_tableIndex"
+        },
+        {
+          "IndexName": "uuidIndex",
+          "KeySchema": [
+            {
+              "AttributeName": "uuid",
+              "KeyType": "HASH"
+            },
+            {
+              "AttributeName": "createdAt",
+              "KeyType": "RANGE"
+            }
+          ],
+          "Projection": {
+            "ProjectionType": "ALL"
+          },
+          "IndexStatus": "CREATING",
+          "ProvisionedThroughput": {
+            "NumberOfDecreasesToday": 0,
+            "ReadCapacityUnits": 1,
+            "WriteCapacityUnits": 1
+          },
+          "IndexSizeBytes": 0,
+          "ItemCount": 0,
+          "IndexArn": "arn:aws:dynamodb:us-east-1:000000000000:table/_test_transactions/index/uuidIndex"
+        }
+      ]
+    }
+  },
+  "20160809131501": {
+    "TableDescription": {
+      "AttributeDefinitions": [
+        {
+          "AttributeName": "uuid",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "operation",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "transaction",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "createdAt",
+          "AttributeType": "N"
+        },
+        {
+          "AttributeName": "_table",
+          "AttributeType": "S"
+        }
+      ],
+      "TableName": "_test_operations_transactions",
+      "KeySchema": [
+        {
+          "AttributeName": "uuid",
+          "KeyType": "HASH"
+        },
+        {
+          "AttributeName": "createdAt",
+          "KeyType": "RANGE"
+        }
+      ],
+      "TableStatus": "CREATING",
+      "CreationDateTime": "2016-08-13T19:43:14.783Z",
+      "ProvisionedThroughput": {
+        "NumberOfDecreasesToday": 0,
+        "ReadCapacityUnits": 1,
+        "WriteCapacityUnits": 1
+      },
+      "TableSizeBytes": 0,
+      "ItemCount": 0,
+      "TableArn": "arn:aws:dynamodb:us-east-1:000000000000:table/_test_operations_transactions",
+      "GlobalSecondaryIndexes": [
+        {
+          "IndexName": "_tableIndex",
+          "KeySchema": [
+            {
+              "AttributeName": "_table",
+              "KeyType": "HASH"
+            },
+            {
+              "AttributeName": "createdAt",
+              "KeyType": "RANGE"
+            }
+          ],
+          "Projection": {
+            "ProjectionType": "ALL"
+          },
+          "IndexStatus": "CREATING",
+          "ProvisionedThroughput": {
+            "NumberOfDecreasesToday": 0,
+            "ReadCapacityUnits": 1,
+            "WriteCapacityUnits": 1
+          },
+          "IndexSizeBytes": 0,
+          "ItemCount": 0,
+          "IndexArn": "arn:aws:dynamodb:us-east-1:000000000000:table/_test_operations_transactions/index/_tableIndex"
+        },
+        {
+          "IndexName": "operationIndex",
+          "KeySchema": [
+            {
+              "AttributeName": "operation",
+              "KeyType": "HASH"
+            },
+            {
+              "AttributeName": "createdAt",
+              "KeyType": "RANGE"
+            }
+          ],
+          "Projection": {
+            "ProjectionType": "ALL"
+          },
+          "IndexStatus": "CREATING",
+          "ProvisionedThroughput": {
+            "NumberOfDecreasesToday": 0,
+            "ReadCapacityUnits": 1,
+            "WriteCapacityUnits": 1
+          },
+          "IndexSizeBytes": 0,
+          "ItemCount": 0,
+          "IndexArn": "arn:aws:dynamodb:us-east-1:000000000000:table/_test_operations_transactions/index/operationIndex"
+        },
+        {
+          "IndexName": "transactionIndex",
+          "KeySchema": [
+            {
+              "AttributeName": "transaction",
+              "KeyType": "HASH"
+            },
+            {
+              "AttributeName": "createdAt",
+              "KeyType": "RANGE"
+            }
+          ],
+          "Projection": {
+            "ProjectionType": "ALL"
+          },
+          "IndexStatus": "CREATING",
+          "ProvisionedThroughput": {
+            "NumberOfDecreasesToday": 0,
+            "ReadCapacityUnits": 1,
+            "WriteCapacityUnits": 1
+          },
+          "IndexSizeBytes": 0,
+          "ItemCount": 0,
+          "IndexArn": "arn:aws:dynamodb:us-east-1:000000000000:table/_test_operations_transactions/index/transactionIndex"
+        }
+      ]
+    }
+  },
+  "20160809215400": {
+    "TableDescription": {
+      "AttributeDefinitions": [
+        {
+          "AttributeName": "uuid",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "createdAt",
+          "AttributeType": "N"
+        },
+        {
+          "AttributeName": "_table",
+          "AttributeType": "S"
+        }
+      ],
+      "TableName": "_test_organizations",
+      "KeySchema": [
+        {
+          "AttributeName": "uuid",
+          "KeyType": "HASH"
+        },
+        {
+          "AttributeName": "createdAt",
+          "KeyType": "RANGE"
+        }
+      ],
+      "TableStatus": "CREATING",
+      "CreationDateTime": "2016-08-13T19:43:14.788Z",
+      "ProvisionedThroughput": {
+        "NumberOfDecreasesToday": 0,
+        "ReadCapacityUnits": 1,
+        "WriteCapacityUnits": 1
+      },
+      "TableSizeBytes": 0,
+      "ItemCount": 0,
+      "TableArn": "arn:aws:dynamodb:us-east-1:000000000000:table/_test_organizations",
+      "GlobalSecondaryIndexes": [
+        {
+          "IndexName": "_tableIndex",
+          "KeySchema": [
+            {
+              "AttributeName": "_table",
+              "KeyType": "HASH"
+            },
+            {
+              "AttributeName": "createdAt",
+              "KeyType": "RANGE"
+            }
+          ],
+          "Projection": {
+            "ProjectionType": "ALL"
+          },
+          "IndexStatus": "CREATING",
+          "ProvisionedThroughput": {
+            "NumberOfDecreasesToday": 0,
+            "ReadCapacityUnits": 1,
+            "WriteCapacityUnits": 1
+          },
+          "IndexSizeBytes": 0,
+          "ItemCount": 0,
+          "IndexArn": "arn:aws:dynamodb:us-east-1:000000000000:table/_test_organizations/index/_tableIndex"
+        },
+        {
+          "IndexName": "uuidIndex",
+          "KeySchema": [
+            {
+              "AttributeName": "uuid",
+              "KeyType": "HASH"
+            },
+            {
+              "AttributeName": "createdAt",
+              "KeyType": "RANGE"
+            }
+          ],
+          "Projection": {
+            "ProjectionType": "ALL"
+          },
+          "IndexStatus": "CREATING",
+          "ProvisionedThroughput": {
+            "NumberOfDecreasesToday": 0,
+            "ReadCapacityUnits": 1,
+            "WriteCapacityUnits": 1
+          },
+          "IndexSizeBytes": 0,
+          "ItemCount": 0,
+          "IndexArn": "arn:aws:dynamodb:us-east-1:000000000000:table/_test_organizations/index/uuidIndex"
+        }
+      ]
+    }
+  },
+  "20160809215501": {
+    "TableDescription": {
+      "AttributeDefinitions": [
+        {
+          "AttributeName": "uuid",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "organization",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "contact",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "createdAt",
+          "AttributeType": "N"
+        },
+        {
+          "AttributeName": "_table",
+          "AttributeType": "S"
+        }
+      ],
+      "TableName": "_test_contacts_organizations",
+      "KeySchema": [
+        {
+          "AttributeName": "uuid",
+          "KeyType": "HASH"
+        },
+        {
+          "AttributeName": "createdAt",
+          "KeyType": "RANGE"
+        }
+      ],
+      "TableStatus": "CREATING",
+      "CreationDateTime": "2016-08-13T19:43:14.795Z",
+      "ProvisionedThroughput": {
+        "NumberOfDecreasesToday": 0,
+        "ReadCapacityUnits": 1,
+        "WriteCapacityUnits": 1
+      },
+      "TableSizeBytes": 0,
+      "ItemCount": 0,
+      "TableArn": "arn:aws:dynamodb:us-east-1:000000000000:table/_test_contacts_organizations",
+      "GlobalSecondaryIndexes": [
+        {
+          "IndexName": "_tableIndex",
+          "KeySchema": [
+            {
+              "AttributeName": "_table",
+              "KeyType": "HASH"
+            },
+            {
+              "AttributeName": "createdAt",
+              "KeyType": "RANGE"
+            }
+          ],
+          "Projection": {
+            "ProjectionType": "ALL"
+          },
+          "IndexStatus": "CREATING",
+          "ProvisionedThroughput": {
+            "NumberOfDecreasesToday": 0,
+            "ReadCapacityUnits": 1,
+            "WriteCapacityUnits": 1
+          },
+          "IndexSizeBytes": 0,
+          "ItemCount": 0,
+          "IndexArn": "arn:aws:dynamodb:us-east-1:000000000000:table/_test_contacts_organizations/index/_tableIndex"
+        },
+        {
+          "IndexName": "organizationIndex",
+          "KeySchema": [
+            {
+              "AttributeName": "organization",
+              "KeyType": "HASH"
+            },
+            {
+              "AttributeName": "createdAt",
+              "KeyType": "RANGE"
+            }
+          ],
+          "Projection": {
+            "ProjectionType": "ALL"
+          },
+          "IndexStatus": "CREATING",
+          "ProvisionedThroughput": {
+            "NumberOfDecreasesToday": 0,
+            "ReadCapacityUnits": 1,
+            "WriteCapacityUnits": 1
+          },
+          "IndexSizeBytes": 0,
+          "ItemCount": 0,
+          "IndexArn": "arn:aws:dynamodb:us-east-1:000000000000:table/_test_contacts_organizations/index/organizationIndex"
+        },
+        {
+          "IndexName": "contactIndex",
+          "KeySchema": [
+            {
+              "AttributeName": "contact",
+              "KeyType": "HASH"
+            },
+            {
+              "AttributeName": "createdAt",
+              "KeyType": "RANGE"
+            }
+          ],
+          "Projection": {
+            "ProjectionType": "ALL"
+          },
+          "IndexStatus": "CREATING",
+          "ProvisionedThroughput": {
+            "NumberOfDecreasesToday": 0,
+            "ReadCapacityUnits": 1,
+            "WriteCapacityUnits": 1
+          },
+          "IndexSizeBytes": 0,
+          "ItemCount": 0,
+          "IndexArn": "arn:aws:dynamodb:us-east-1:000000000000:table/_test_contacts_organizations/index/contactIndex"
+        }
+      ]
+    }
+  },
+  "20160810134500": {
+    "TableDescription": {
+      "AttributeDefinitions": [
+        {
+          "AttributeName": "tableDigest",
+          "AttributeType": "S"
+        }
+      ],
+      "TableName": "_test_table_counters",
+      "KeySchema": [
+        {
+          "AttributeName": "tableDigest",
+          "KeyType": "HASH"
+        }
+      ],
+      "TableStatus": "CREATING",
+      "CreationDateTime": "2016-08-13T19:43:14.800Z",
+      "ProvisionedThroughput": {
+        "NumberOfDecreasesToday": 0,
+        "ReadCapacityUnits": 1,
+        "WriteCapacityUnits": 1
+      },
+      "TableSizeBytes": 0,
+      "ItemCount": 0,
+      "TableArn": "arn:aws:dynamodb:us-east-1:000000000000:table/_test_table_counters",
+      "GlobalSecondaryIndexes": [
+        {
+          "IndexName": "tableDigestIndex",
+          "KeySchema": [
+            {
+              "AttributeName": "tableDigest",
+              "KeyType": "HASH"
+            }
+          ],
+          "Projection": {
+            "ProjectionType": "ALL"
+          },
+          "IndexStatus": "CREATING",
+          "ProvisionedThroughput": {
+            "NumberOfDecreasesToday": 0,
+            "ReadCapacityUnits": 1,
+            "WriteCapacityUnits": 1
+          },
+          "IndexSizeBytes": 0,
+          "ItemCount": 0,
+          "IndexArn": "arn:aws:dynamodb:us-east-1:000000000000:table/_test_table_counters/index/tableDigestIndex"
+        }
+      ]
+    }
+  }
+}

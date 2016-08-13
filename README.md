@@ -4,6 +4,8 @@ pyrope
 [![Codecov coverage](https://img.shields.io/codecov/c/github/sdelrio0/pyrope.svg?style=flat)]()
 [![npm version](https://img.shields.io/npm/v/pyrope.svg?style=flat)]()
 [![npm licence](https://img.shields.io/npm/l/pyrope.svg?style=flat)](https://en.wikipedia.org/wiki/MIT_License)
+[![semantic-release](https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg?style=flat)](https://github.com/semantic-release/semantic-release)
+[![Commitizen friendly](https://img.shields.io/badge/commitizen-friendly-brightgreen.svg?style=flat)](http://commitizen.github.io/cz-cli/)
 
 Pyrope is a Node.js promise-based ORM for GraphQL and AWS DynamoDB.
 

@@ -5,7 +5,7 @@ import { sortBy } from 'underscore';
 import { v4 } from 'uuid';
 import { resetDatabase, createUser, createUserRecursive, createContact } from '../../test_helper';
 
-const TEST_TIMEOUT = 3000;
+const TEST_TIMEOUT = 4000;
 
 describe('DynamoDB actions', function() {
   describe('create()', function() {

@@ -1,0 +1,19 @@
+# Config
+.git
+.idea
+.env
+
+# Outputs
+npm-debug.log*
+*.log
+
+# Dirs
+node_modules
+logs
+.DS_Store
+.tmp
+dist
+
+# Testing
+coverage
+.nyc_output

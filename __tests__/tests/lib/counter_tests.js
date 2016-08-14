@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import * as dynamo from '../../../lib';
+import * as pyrope from '../../../lib';
 import { resetDatabase, createUser, createUserRecursive, createContact } from '../../test_helper';
 
 const TEST_TIMEOUT = 3000;
@@ -12,7 +12,7 @@ describe('DynamoDB atomic counters', function() {
     before(() => resetDatabase());
     
     it('starts with count = 0', function() {
-      return dynamo.count({tableName: '_test_users'})
+      return pyrope.count({tableName: '_test_users'})
         .then(res => {
           expect(res).to.equal(0);
         })
@@ -24,24 +24,24 @@ describe('DynamoDB atomic counters', function() {
         .then(() => createUser({})).then(u => u3 = u)
         .then(() => createUser({})).then(u => u4 = u)
         .then(() => createUser({})).then(u => u5 = u)
-        .then(() => dynamo.count({tableName: '_test_users'}))
+        .then(() => pyrope.count({tableName: '_test_users'}))
         .then(res => {
           expect(res).to.equal(5);
         })
     });
     
     it('deletes 2 users, count = 3', function() {
-      return dynamo.destroy({tableName: '_test_users', index: {uuid: u1.uuid}})
-        .then(() => dynamo.destroy({tableName: '_test_users', index: {uuid: u2.uuid}}))
-        .then(() => dynamo.count({tableName: '_test_users'}))
+      return pyrope.destroy({tableName: '_test_users', index: {uuid: u1.uuid}})
+        .then(() => pyrope.destroy({tableName: '_test_users', index: {uuid: u2.uuid}}))
+        .then(() => pyrope.count({tableName: '_test_users'}))
         .then(res => {
           expect(res).to.equal(3);
         })
     });
   
     it('fails to delete user and counter remains the same', function() {
-      return dynamo.destroy({tableName: '_test_users', index: {uuid: '123'}})
-        .then(() => dynamo.count({tableName: '_test_users'}))
+      return pyrope.destroy({tableName: '_test_users', index: {uuid: '123'}})
+        .then(() => pyrope.count({tableName: '_test_users'}))
         .then(res => {
           expect(res).to.equal(3);
         })

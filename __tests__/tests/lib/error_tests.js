@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import * as dynamo from '../../../lib';
+import * as pyrope from '../../../lib';
 import { resetDatabase, createUser, createContact } from '../../test_helper';
 
 const TEST_TIMEOUT = 3000;
@@ -18,7 +18,7 @@ xdescribe('DynamoDB errors', function() {
   describe('', function() {
     it('', function() {
       
-      return dynamo.associate({
+      return pyrope.associate({
         tableName: '_test_contacts_users',
         items: [
           {

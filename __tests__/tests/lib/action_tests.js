@@ -1,9 +1,9 @@
 import Promise from 'bluebird';
 import { expect } from 'chai';
-import * as dynamo from '../../../lib';
+import * as pyrope from '../../../lib';
 import { sortBy } from 'underscore';
 import { v4 } from 'uuid';
-import { resetDatabase, createUser, createUserRecursive, createContact } from '../../test_helper';
+import { resetDatabase, createUser, createUserRecursive } from '../../test_helper';
 
 const TEST_TIMEOUT = 4000;
 
@@ -14,7 +14,7 @@ describe('DynamoDB actions', function() {
      
     it('creates a new user and returns the correct attributes', function() {
       return new Promise((resolve, reject) => {
-        dynamo.create({
+        pyrope.create({
           tableName: '_test_users',
           attributes: {
             username: 'john',
@@ -22,7 +22,7 @@ describe('DynamoDB actions', function() {
           }
         })
           .then((user) => {
-            dynamo.ddbClient('scan', {TableName: '_test_users',})
+            pyrope.ddbClient('scan', {TableName: '_test_users',})
               .then(res => {
                 let list = sortBy(res.Items, 'createdAt');
                 
@@ -50,7 +50,7 @@ describe('DynamoDB actions', function() {
       return new Promise((resolve, reject) => {
         createUserRecursive({username: 'user', password: 'password'}, 2)
           .then(() => {
-            dynamo.all({tableName: '_test_users'})
+            pyrope.all({tableName: '_test_users'})
               .then(res => {
                 let list = sortBy(res.Items, 'createdAt');
         
@@ -74,7 +74,7 @@ describe('DynamoDB actions', function() {
       return new Promise((resolve, reject) => {
         createUserRecursive({username: 'user', password: 'password'}, 3)
           .then(() => {
-            dynamo.all({tableName: '_test_users'})
+            pyrope.all({tableName: '_test_users'})
               .then(res => {
                 let users = res.Items;
                 
@@ -93,7 +93,7 @@ describe('DynamoDB actions', function() {
       return new Promise((resolve, reject) => {
         createUserRecursive({username: 'user', password: 'password'}, 3)
           .then(() => {
-            dynamo.all({tableName: '_test_users', ascending: false})
+            pyrope.all({tableName: '_test_users', ascending: false})
               .then(res => {
                 let users = res.Items;
                 
@@ -127,7 +127,7 @@ describe('DynamoDB actions', function() {
     
     it('takes the first 3 elements in ASC order', function() {
       return new Promise((resolve, reject) => {
-        dynamo.take({tableName: '_test_users', limit: 3})
+        pyrope.take({tableName: '_test_users', limit: 3})
           .then(res => {
             let users = res.Items;
             
@@ -144,7 +144,7 @@ describe('DynamoDB actions', function() {
     
     it('takes the first 3 elements in DESC order', function() {
       return new Promise((resolve, reject) => {
-        dynamo.take({tableName: '_test_users', limit: 3, ascending: false})
+        pyrope.take({tableName: '_test_users', limit: 3, ascending: false})
           .then(res => {
             let users = res.Items;
             
@@ -161,7 +161,7 @@ describe('DynamoDB actions', function() {
     
     it('takes the first 3 elements in ASC order and saves cursor', function() {
       return new Promise((resolve, reject) => {
-        dynamo.take({tableName: '_test_users', limit: 3})
+        pyrope.take({tableName: '_test_users', limit: 3})
           .then(res => {
             let users = res.Items;
             cursor = res.Cursor;
@@ -179,7 +179,7 @@ describe('DynamoDB actions', function() {
     
     it('takes the next 3 elements in ASC order using the cursor', function() {
       return new Promise((resolve, reject) => {
-        dynamo.take({tableName: '_test_users', limit: 3, cursor})
+        pyrope.take({tableName: '_test_users', limit: 3, cursor})
           .then(res => {
             let users = res.Items;
             
@@ -213,7 +213,7 @@ describe('DynamoDB actions', function() {
     
     it('takes the first 3 elements in ASC order', function() {
       return new Promise((resolve, reject) => {
-        dynamo.first({tableName: '_test_users', limit: 3})
+        pyrope.first({tableName: '_test_users', limit: 3})
           .then(res => {
             let users = res.Items;
             
@@ -230,7 +230,7 @@ describe('DynamoDB actions', function() {
     
     it('takes the first 3 elements in ASC order and saves cursor', function() {
       return new Promise((resolve, reject) => {
-        dynamo.first({tableName: '_test_users', limit: 3})
+        pyrope.first({tableName: '_test_users', limit: 3})
           .then(res => {
             let users = res.Items;
             cursor = res.Cursor;
@@ -248,7 +248,7 @@ describe('DynamoDB actions', function() {
     
     it('takes the next 3 elements in ASC order using the cursor', function() {
       return new Promise((resolve, reject) => {
-        dynamo.first({tableName: '_test_users', limit: 3, cursor})
+        pyrope.first({tableName: '_test_users', limit: 3, cursor})
           .then(res => {
             let users = res.Items;
             
@@ -282,7 +282,7 @@ describe('DynamoDB actions', function() {
     
     it('takes the last 3 elements ', function() {
       return new Promise((resolve, reject) => {
-        dynamo.last({tableName: '_test_users', limit: 3})
+        pyrope.last({tableName: '_test_users', limit: 3})
           .then(res => {
             let users = res.Items;
             
@@ -299,7 +299,7 @@ describe('DynamoDB actions', function() {
     
     it('takes the last 3 elements and saves cursor', function() {
       return new Promise((resolve, reject) => {
-        dynamo.last({tableName: '_test_users', limit: 3})
+        pyrope.last({tableName: '_test_users', limit: 3})
           .then(res => {
             let users = res.Items;
             cursor = res.Cursor;
@@ -317,7 +317,7 @@ describe('DynamoDB actions', function() {
     
     it('takes the next 3 last elements using the cursor', function() {
       return new Promise((resolve, reject) => {
-        dynamo.last({tableName: '_test_users', limit: 3, cursor})
+        pyrope.last({tableName: '_test_users', limit: 3, cursor})
           .then(res => {
             let users = res.Items;
             
@@ -349,7 +349,7 @@ describe('DynamoDB actions', function() {
     
     it('finds a user by usernameIndex', function() {
       return new Promise((resolve, reject) => {
-        dynamo.findByIndex({
+        pyrope.findByIndex({
           tableName: '_test_users',
           index: {username: 'john'}
         })
@@ -366,7 +366,7 @@ describe('DynamoDB actions', function() {
     
     it('returns false when a user is not found', function() {
       return new Promise((resolve, reject) => {
-        dynamo.findByIndex({
+        pyrope.findByIndex({
           tableName: '_test_users',
           index: {username: 'john2'}
         })
@@ -383,7 +383,7 @@ describe('DynamoDB actions', function() {
       return new Promise((resolve, reject) => {
         createUser({username: 'john', password: 'password'})
           .then(() => {
-            dynamo.findByIndex({
+            pyrope.findByIndex({
               tableName: '_test_users',
               index: {username: 'john'}
             })
@@ -416,7 +416,7 @@ describe('DynamoDB actions', function() {
     }));
     
     it('updates the user\'s username looking up the username', () => new Promise((resolve, reject) => {
-      dynamo.update({
+      pyrope.update({
         tableName: '_test_users',
         index: {username: 'john'},
         attributes: {
@@ -435,7 +435,7 @@ describe('DynamoDB actions', function() {
     
     it('updates the user and returns the correct keys', function() {
       return new Promise((resolve, reject) => {
-        dynamo.update({
+        pyrope.update({
           tableName: '_test_users',
           index: {username: 'john'},
           attributes: {
@@ -453,7 +453,7 @@ describe('DynamoDB actions', function() {
     });
     
     it('returns false when user is not found', () => new Promise((resolve, reject) => {
-      dynamo.update({
+      pyrope.update({
         tableName: '_test_users',
         index: {uuid: 'wronguuid', createdAt: 123},
         attributes: {
@@ -470,7 +470,7 @@ describe('DynamoDB actions', function() {
     
     it('accepts a before hook to change the arguments before updating', function() {
       return new Promise((resolve, reject) => {
-        dynamo.update({
+        pyrope.update({
           tableName: '_test_users',
           index: {username: 'john'},
           attributes: {
@@ -498,7 +498,7 @@ describe('DynamoDB actions', function() {
       return new Promise((resolve, reject) => {
         createUser({username: 'john', password: 'password'})
           .then(() => {
-            dynamo.update({
+            pyrope.update({
               tableName: '_test_users',
               index: {username: 'john'},
               attributes: {
@@ -530,12 +530,12 @@ describe('DynamoDB actions', function() {
     
     it("deletes the user and returns its attributes", function() {
       return new Promise((resolve, reject) => {
-        dynamo.destroy({
+        pyrope.destroy({
           tableName: '_test_users',
           index: {username: 'john'}
         })
           .then(res => {
-            dynamo.all({
+            pyrope.all({
               tableName: '_test_users',
             })
               .then(list => {
@@ -552,7 +552,7 @@ describe('DynamoDB actions', function() {
     });
   
     it("if the user doesn't exist, return false", () => new Promise((resolve, reject) => {
-      dynamo.destroy({
+      pyrope.destroy({
         tableName: '_test_users',
         index: {username: 'john2'}
       })

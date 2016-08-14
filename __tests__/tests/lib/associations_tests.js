@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import * as dynamo from '../../../lib';
+import * as pyrope from '../../../lib';
 import { findWhere } from 'underscore';
 import { v4 } from 'uuid';
 import { resetDatabase, createUser, createOrganization, createContact, createOperation, createTransaction } from '../../test_helper';
@@ -40,7 +40,7 @@ describe('DynamoDB associations', function() {
   
     describe('user(u1).contact = c1', () => {
       it("start with clean table", () => {
-        return dynamo.all({
+        return pyrope.all({
           tableName: '_test_contacts_users'
          
         }).then(res => {
@@ -50,7 +50,7 @@ describe('DynamoDB associations', function() {
       });
     
       it("make association", () => {
-        return dynamo.associate({
+        return pyrope.associate({
           tableName: '_test_contacts_users',
           items: [
             {
@@ -72,7 +72,7 @@ describe('DynamoDB associations', function() {
       });
     
       it("check table", () => {
-        return dynamo.all({
+        return pyrope.all({
           tableName: '_test_contacts_users'
         
         }).then(res => {
@@ -87,7 +87,7 @@ describe('DynamoDB associations', function() {
   
     describe('user(u2).contact = c2', () => {
       it("start with clean table", () => {
-        return dynamo.all({
+        return pyrope.all({
           tableName: '_test_contacts_users'
         
         }).then(res => {
@@ -97,7 +97,7 @@ describe('DynamoDB associations', function() {
       });
     
       it("make association", () => {
-        return dynamo.associate({
+        return pyrope.associate({
           tableName: '_test_contacts_users',
           items: [
             {
@@ -119,7 +119,7 @@ describe('DynamoDB associations', function() {
       });
     
       it("check table", () => {
-        return dynamo.all({
+        return pyrope.all({
           tableName: '_test_contacts_users'
         
         }).then(res => {
@@ -134,7 +134,7 @@ describe('DynamoDB associations', function() {
   
     describe('user(u3).contact = c3', () => {
       it("start with clean table", () => {
-        return dynamo.all({
+        return pyrope.all({
           tableName: '_test_contacts_users'
         
         }).then(res => {
@@ -144,7 +144,7 @@ describe('DynamoDB associations', function() {
       });
     
       it("make association", () => {
-        return dynamo.associate({
+        return pyrope.associate({
           tableName: '_test_contacts_users',
           items: [
             {
@@ -166,7 +166,7 @@ describe('DynamoDB associations', function() {
       });
     
       it("check table", () => {
-        return dynamo.all({
+        return pyrope.all({
           tableName: '_test_contacts_users'
         
         }).then(res => {
@@ -181,7 +181,7 @@ describe('DynamoDB associations', function() {
   
     describe('user(u2).contact = c1', () => {
       it("start with clean table", () => {
-        return dynamo.all({
+        return pyrope.all({
           tableName: '_test_contacts_users'
         
         }).then(res => {
@@ -193,7 +193,7 @@ describe('DynamoDB associations', function() {
       });
     
       it("make association", () => {
-        return dynamo.associate({
+        return pyrope.associate({
           tableName: '_test_contacts_users',
           items: [
             {
@@ -215,7 +215,7 @@ describe('DynamoDB associations', function() {
       });
     
       it("check table", () => {
-        return dynamo.all({
+        return pyrope.all({
           tableName: '_test_contacts_users'
         
         }).then(res => {
@@ -233,7 +233,7 @@ describe('DynamoDB associations', function() {
   
     describe('contact(c3).user = u2', () => {
       it("start with clean table", () => {
-        return dynamo.all({
+        return pyrope.all({
           tableName: '_test_contacts_users'
         
         }).then(res => {
@@ -245,7 +245,7 @@ describe('DynamoDB associations', function() {
       });
     
       it("make association", () => {
-        return dynamo.associate({
+        return pyrope.associate({
           tableName: '_test_contacts_users',
           items: [
             {
@@ -267,7 +267,7 @@ describe('DynamoDB associations', function() {
       });
     
       it("check table", () => {
-        return dynamo.all({
+        return pyrope.all({
           tableName: '_test_contacts_users'
         
         }).then(res => {
@@ -283,7 +283,7 @@ describe('DynamoDB associations', function() {
   
     describe('dissociate(c3).user(u2)', () => {
       it("make dissociaton", () => {
-        return dynamo.dissociate({
+        return pyrope.dissociate({
           tableName: '_test_contacts_users',
           items: [
             {
@@ -303,7 +303,7 @@ describe('DynamoDB associations', function() {
       });
      
       it("post table check", () => {
-        return dynamo.all({
+        return pyrope.all({
           tableName: '_test_contacts_users'
         
         }).then(res => {
@@ -335,7 +335,7 @@ describe('DynamoDB associations', function() {
   
     describe('operation(o1).transactions << [t1, t2]', () => {
       it("pre table check", () => {
-        return dynamo.all({
+        return pyrope.all({
           tableName: '_test_operations_transactions'
         
         }).then(res => {
@@ -347,7 +347,7 @@ describe('DynamoDB associations', function() {
       });
     
       it("make association", () => {
-        return dynamo.associate({
+        return pyrope.associate({
           tableName: '_test_operations_transactions',
           items: [
             {
@@ -369,7 +369,7 @@ describe('DynamoDB associations', function() {
       });
     
       it("post table check", () => {
-        return dynamo.all({
+        return pyrope.all({
           tableName: '_test_operations_transactions'
         
         }).then(res => {
@@ -387,7 +387,7 @@ describe('DynamoDB associations', function() {
   
     describe('operation(o1).transactions << t3', () => {
       it("pre table check", () => {
-        return dynamo.all({
+        return pyrope.all({
           tableName: '_test_operations_transactions'
         
         }).then(res => {
@@ -399,7 +399,7 @@ describe('DynamoDB associations', function() {
       });
     
       it("make association", () => {
-        return dynamo.associate({
+        return pyrope.associate({
           tableName: '_test_operations_transactions',
           items: [
             {
@@ -421,7 +421,7 @@ describe('DynamoDB associations', function() {
       });
     
       it("post table check", () => {
-        return dynamo.all({
+        return pyrope.all({
           tableName: '_test_operations_transactions'
         
         }).then(res => {
@@ -441,7 +441,7 @@ describe('DynamoDB associations', function() {
   
     describe('operation(o2).transactions << [t4, t5]', () => {
       it("pre table check", () => {
-        return dynamo.all({
+        return pyrope.all({
           tableName: '_test_operations_transactions'
         
         }).then(res => {
@@ -453,7 +453,7 @@ describe('DynamoDB associations', function() {
       });
     
       it("make association", () => {
-        return dynamo.associate({
+        return pyrope.associate({
           tableName: '_test_operations_transactions',
           items: [
             {
@@ -475,7 +475,7 @@ describe('DynamoDB associations', function() {
       });
     
       it("post table check", () => {
-        return dynamo.all({
+        return pyrope.all({
           tableName: '_test_operations_transactions'
         
         }).then(res => {
@@ -499,7 +499,7 @@ describe('DynamoDB associations', function() {
   
     describe('operation(o1).transactions << [t1, t4]', () => {
       it("pre table check", () => {
-        return dynamo.all({
+        return pyrope.all({
           tableName: '_test_operations_transactions'
         
         }).then(res => {
@@ -511,7 +511,7 @@ describe('DynamoDB associations', function() {
       });
     
       it("make association", () => {
-        return dynamo.associate({
+        return pyrope.associate({
           tableName: '_test_operations_transactions',
           items: [
             {
@@ -533,7 +533,7 @@ describe('DynamoDB associations', function() {
       });
     
       it("post table check", () => {
-        return dynamo.all({
+        return pyrope.all({
           tableName: '_test_operations_transactions'
         
         }).then(res => {
@@ -557,7 +557,7 @@ describe('DynamoDB associations', function() {
   
     describe('operation(o2).transactions << [t1, t2, t6]', () => {
       it("pre table check", () => {
-        return dynamo.all({
+        return pyrope.all({
           tableName: '_test_operations_transactions'
         
         }).then(res => {
@@ -569,7 +569,7 @@ describe('DynamoDB associations', function() {
       });
     
       it("make association", () => {
-        return dynamo.associate({
+        return pyrope.associate({
           tableName: '_test_operations_transactions',
           items: [
             {
@@ -591,7 +591,7 @@ describe('DynamoDB associations', function() {
       });
     
       it("post table check", () => {
-        return dynamo.all({
+        return pyrope.all({
           tableName: '_test_operations_transactions'
         
         }).then(res => {
@@ -616,7 +616,7 @@ describe('DynamoDB associations', function() {
   
       describe('dissociate(o1).transaction(null)', () => {
         it("make dissociaton", () => {
-          return dynamo.dissociate({
+          return pyrope.dissociate({
             tableName: '_test_operations_transactions',
             items: [
               {
@@ -636,7 +636,7 @@ describe('DynamoDB associations', function() {
         });
     
         it("post table check", () => {
-          return dynamo.all({
+          return pyrope.all({
             tableName: '_test_operations_transactions'
         
           }).then(res => {
@@ -658,7 +658,7 @@ describe('DynamoDB associations', function() {
   
       describe('dissociate(o1).transaction(t1)', () => {
         it("make dissociaton", () => {
-          return dynamo.dissociate({
+          return pyrope.dissociate({
             tableName: '_test_operations_transactions',
             items: [
               {
@@ -678,7 +678,7 @@ describe('DynamoDB associations', function() {
         });
     
         it("post table check", () => {
-          return dynamo.all({
+          return pyrope.all({
             tableName: '_test_operations_transactions'
         
           }).then(res => {
@@ -698,7 +698,7 @@ describe('DynamoDB associations', function() {
   
       describe('dissociate(o1).transaction([t5, 56)', () => {
         it("make dissociaton", () => {
-          return dynamo.dissociate({
+          return pyrope.dissociate({
             tableName: '_test_operations_transactions',
             items: [
               {
@@ -718,7 +718,7 @@ describe('DynamoDB associations', function() {
         });
     
         it("post table check", () => {
-          return dynamo.all({
+          return pyrope.all({
             tableName: '_test_operations_transactions'
         
           }).then(res => {
@@ -758,7 +758,7 @@ describe('DynamoDB associations', function() {
     
     describe('organization(o1).contact << c1', () => {
       it("pre table check", () => {
-        return dynamo.all({
+        return pyrope.all({
           tableName: '_test_contacts_organizations'
           
         }).then(res => {
@@ -770,7 +770,7 @@ describe('DynamoDB associations', function() {
       });
       
       it("make association", () => {
-        return dynamo.associate({
+        return pyrope.associate({
           tableName: '_test_contacts_organizations',
           items: [
             {
@@ -792,7 +792,7 @@ describe('DynamoDB associations', function() {
       });
       
       it("post table check", () => {
-        return dynamo.all({
+        return pyrope.all({
           tableName: '_test_contacts_organizations'
           
         }).then(res => {
@@ -808,7 +808,7 @@ describe('DynamoDB associations', function() {
   
     describe('organization(o1).contact << [c2, c3]', () => {
       it("make association", () => {
-        return dynamo.associate({
+        return pyrope.associate({
           tableName: '_test_contacts_organizations',
           items: [
             {
@@ -830,7 +830,7 @@ describe('DynamoDB associations', function() {
       });
     
       it("post table check", () => {
-        return dynamo.all({
+        return pyrope.all({
           tableName: '_test_contacts_organizations'
         
         }).then(res => {
@@ -850,7 +850,7 @@ describe('DynamoDB associations', function() {
    
     describe('contact(c1).organization << o1', () => {
       it("make association", () => {
-        return dynamo.associate({
+        return pyrope.associate({
           tableName: '_test_contacts_organizations',
           items: [
             {
@@ -872,7 +872,7 @@ describe('DynamoDB associations', function() {
       });
     
       it("post table check", () => {
-        return dynamo.all({
+        return pyrope.all({
           tableName: '_test_contacts_organizations'
         
         }).then(res => {
@@ -892,7 +892,7 @@ describe('DynamoDB associations', function() {
   
     describe('contact(c1).organization << [o1, o2]', () => {
       it("make association", () => {
-        return dynamo.associate({
+        return pyrope.associate({
           tableName: '_test_contacts_organizations',
           items: [
             {
@@ -914,7 +914,7 @@ describe('DynamoDB associations', function() {
       });
     
       it("post table check", () => {
-        return dynamo.all({
+        return pyrope.all({
           tableName: '_test_contacts_organizations'
         
         }).then(res => {
@@ -936,7 +936,7 @@ describe('DynamoDB associations', function() {
   
     describe('organization(o1).contact << [c1, c2, c4]', () => {
       it("make association", () => {
-        return dynamo.associate({
+        return pyrope.associate({
           tableName: '_test_contacts_organizations',
           items: [
             {
@@ -958,7 +958,7 @@ describe('DynamoDB associations', function() {
       });
     
       it("post table check", () => {
-        return dynamo.all({
+        return pyrope.all({
           tableName: '_test_contacts_organizations'
         
         }).then(res => {
@@ -982,7 +982,7 @@ describe('DynamoDB associations', function() {
   
     describe('organization([o1, o2]).contact << [c2, c1, c4]', () => {
       it("make association", () => {
-        return dynamo.associate({
+        return pyrope.associate({
           tableName: '_test_contacts_organizations',
           items: [
             {
@@ -1004,7 +1004,7 @@ describe('DynamoDB associations', function() {
       });
     
       it("post table check", () => {
-        return dynamo.all({
+        return pyrope.all({
           tableName: '_test_contacts_organizations'
         
         }).then(res => {
@@ -1032,7 +1032,7 @@ describe('DynamoDB associations', function() {
     
     describe('contact(c1).organization << [o2, o3]', () => {
       it("make association", () => {
-        return dynamo.associate({
+        return pyrope.associate({
           tableName: '_test_contacts_organizations',
           items: [
             {
@@ -1054,7 +1054,7 @@ describe('DynamoDB associations', function() {
       });
     
       it("post table check", () => {
-        return dynamo.all({
+        return pyrope.all({
           tableName: '_test_contacts_organizations'
         
         }).then(res => {
@@ -1084,7 +1084,7 @@ describe('DynamoDB associations', function() {
   
     describe('organization(o1!).contact =  c1', () => {
       it("make association", () => {
-        return dynamo.associate({
+        return pyrope.associate({
           tableName: '_test_contacts_organizations',
           items: [
             {
@@ -1106,7 +1106,7 @@ describe('DynamoDB associations', function() {
       });
     
       it("post table check", () => {
-        return dynamo.all({
+        return pyrope.all({
           tableName: '_test_contacts_organizations'
         
         }).then(res => {
@@ -1130,7 +1130,7 @@ describe('DynamoDB associations', function() {
   
     describe('dissociate(c4, null)', () => {
       it("make dissociaton", () => {
-        return dynamo.dissociate({
+        return pyrope.dissociate({
           tableName: '_test_contacts_organizations',
           items: [
             {
@@ -1150,7 +1150,7 @@ describe('DynamoDB associations', function() {
       });
     
       it("post table check", () => {
-        return dynamo.all({
+        return pyrope.all({
           tableName: '_test_contacts_organizations'
         
         }).then(res => {
@@ -1172,7 +1172,7 @@ describe('DynamoDB associations', function() {
   
     describe('dissociate(o2, c1)', () => {
       it("make dissociaton", () => {
-        return dynamo.dissociate({
+        return pyrope.dissociate({
           tableName: '_test_contacts_organizations',
           items: [
             {
@@ -1192,7 +1192,7 @@ describe('DynamoDB associations', function() {
       });
     
       it("post table check", () => {
-        return dynamo.all({
+        return pyrope.all({
           tableName: '_test_contacts_organizations'
         
         }).then(res => {
@@ -1212,7 +1212,7 @@ describe('DynamoDB associations', function() {
   
     describe('dissociate(c1, [o3, o1])', () => {
       it("make dissociaton", () => {
-        return dynamo.dissociate({
+        return pyrope.dissociate({
           tableName: '_test_contacts_organizations',
           items: [
             {
@@ -1232,7 +1232,7 @@ describe('DynamoDB associations', function() {
       });
     
       it("post table check", () => {
-        return dynamo.all({
+        return pyrope.all({
           tableName: '_test_contacts_organizations'
         
         }).then(res => {
@@ -1248,7 +1248,7 @@ describe('DynamoDB associations', function() {
   
     describe('dissociate(c1, o3) = false', () => {
       it("make dissociaton", () => new Promise((resolve, reject) => {
-        dynamo.dissociate({
+        pyrope.dissociate({
           tableName: '_test_contacts_organizations',
           items: [
             {index: {contact: c1.uuid}},
@@ -1262,7 +1262,7 @@ describe('DynamoDB associations', function() {
       }));
     
       it("post table check", () => {
-        return dynamo.all({
+        return pyrope.all({
           tableName: '_test_contacts_organizations'
         
         }).then(res => {
@@ -1324,7 +1324,7 @@ describe('DynamoDB associations', function() {
     
     describe('associate o1..4 with c1..4', () => {
       it('Generates associations', () => new Promise((resolve, reject) => {
-        dynamo.associate({
+        pyrope.associate({
           tableName: '_test_contacts_organizations',
           items: [
             {
@@ -1338,7 +1338,7 @@ describe('DynamoDB associations', function() {
               hasMany: true
             }
           ]
-        }).then(() => dynamo.associate({
+        }).then(() => pyrope.associate({
           tableName: '_test_contacts_organizations',
           items: [
             {
@@ -1354,7 +1354,7 @@ describe('DynamoDB associations', function() {
               hasMany: true
             }
           ]
-        })).then(() => dynamo.associate({
+        })).then(() => pyrope.associate({
           tableName: '_test_contacts_organizations',
           items: [
             {
@@ -1370,7 +1370,7 @@ describe('DynamoDB associations', function() {
               hasMany: true
             }
           ]
-        })).then(() => dynamo.associate({
+        })).then(() => pyrope.associate({
           tableName: '_test_contacts_organizations',
           items: [
             {
@@ -1392,7 +1392,7 @@ describe('DynamoDB associations', function() {
       }));
     
       it('Checks table', () => new Promise((resolve, reject) => {
-        dynamo.all({
+        pyrope.all({
           tableName: '_test_contacts_organizations'
         }).then(res => {
           // console.log(JSON.stringify(res, null, 2));
@@ -1417,7 +1417,7 @@ describe('DynamoDB associations', function() {
         // c4.uuid = 'c4';
   
         // o1, o2, o3, o4
-        return dynamo.getAssociations({
+        return pyrope.getAssociations({
           tableName: '_test_contacts_organizations',
           items: [
             {index: {organization: o1.uuid}},
@@ -1428,7 +1428,7 @@ describe('DynamoDB associations', function() {
           expect(res).to.have.members([
             c1.uuid,c2.uuid,c3.uuid
           ])
-        ])).then(() => dynamo.getAssociations({
+        ])).then(() => pyrope.getAssociations({
           tableName: '_test_contacts_organizations',
           items: [
             {index: {organization: o2.uuid}},
@@ -1439,7 +1439,7 @@ describe('DynamoDB associations', function() {
           expect(res).to.have.members([
             c1.uuid
           ])
-        ])).then(() => dynamo.getAssociations({
+        ])).then(() => pyrope.getAssociations({
           tableName: '_test_contacts_organizations',
           items: [
             {index: {organization: o3.uuid}},
@@ -1450,7 +1450,7 @@ describe('DynamoDB associations', function() {
           expect(res).to.have.members([
             c2.uuid
           ])
-        ])).then(() => dynamo.getAssociations({
+        ])).then(() => pyrope.getAssociations({
           tableName: '_test_contacts_organizations',
           items: [
             {index: {organization: o4.uuid}},
@@ -1464,7 +1464,7 @@ describe('DynamoDB associations', function() {
         ]))
           
         // c1, c2, c3, c4
-          .then(() => dynamo.getAssociations({
+          .then(() => pyrope.getAssociations({
             tableName: '_test_contacts_organizations',
             items: [
               {index: {contact: c1.uuid}},
@@ -1475,7 +1475,7 @@ describe('DynamoDB associations', function() {
           expect(res).to.have.members([
             o1.uuid, o2.uuid
           ])
-        ])).then(() => dynamo.getAssociations({
+        ])).then(() => pyrope.getAssociations({
           tableName: '_test_contacts_organizations',
             items: [
               {index: {contact: c2.uuid}},
@@ -1486,7 +1486,7 @@ describe('DynamoDB associations', function() {
           expect(res).to.have.members([
             o1.uuid, o3.uuid
           ])
-        ])).then(() => dynamo.getAssociations({
+        ])).then(() => pyrope.getAssociations({
           tableName: '_test_contacts_organizations',
             items: [
               {index: {contact: c3.uuid}},
@@ -1497,7 +1497,7 @@ describe('DynamoDB associations', function() {
           expect(res).to.have.members([
             o1.uuid
           ])
-        ])).then(() => dynamo.getAssociations({
+        ])).then(() => pyrope.getAssociations({
           tableName: '_test_contacts_organizations',
             items: [
               {index: {contact: c4.uuid}},

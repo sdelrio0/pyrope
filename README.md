@@ -2,6 +2,7 @@ pyrope
 ======
 [![Travis build](https://img.shields.io/travis/sdelrio0/pyrope.svg?style=flat)](https://travis-ci.org/sdelrio0/pyrope)
 [![Codecov coverage](https://img.shields.io/codecov/c/github/sdelrio0/pyrope.svg?style=flat)]()
+[![Documentation](https://doc.esdoc.org/github.com/sdelrio0/pyrope/badge.svg)](https://doc.esdoc.org/github.com/sdelrio0/pyrope/)
 [![npm version](https://img.shields.io/npm/v/pyrope.svg?style=flat)]()
 [![npm licence](https://img.shields.io/npm/l/pyrope.svg?style=flat)](https://en.wikipedia.org/wiki/MIT_License)
 [![semantic-release](https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg?style=flat)](https://github.com/semantic-release/semantic-release)

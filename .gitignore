@@ -20,4 +20,4 @@ coverage
 
 # ddm-migrate related files
 .dynamodb
-.schema
+schema.json

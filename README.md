@@ -11,6 +11,7 @@ Pyrope is a Node.js promise-based ORM for GraphQL and AWS DynamoDB.
 
 **Under development. Not intended for production use. Watch on [github](https://github.com/sdelrio0/pyrope) to be notified about new releases. Coming soon.**
 
+
 MIT Licence
 ===========
 

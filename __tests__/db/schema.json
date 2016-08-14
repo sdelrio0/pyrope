@@ -31,7 +31,7 @@
         }
       ],
       "TableStatus": "CREATING",
-      "CreationDateTime": "2016-08-13T21:16:55.484Z",
+      "CreationDateTime": "2016-08-14T01:04:48.544Z",
       "ProvisionedThroughput": {
         "NumberOfDecreasesToday": 0,
         "ReadCapacityUnits": 1,
@@ -147,7 +147,7 @@
         }
       ],
       "TableStatus": "CREATING",
-      "CreationDateTime": "2016-08-13T21:16:55.515Z",
+      "CreationDateTime": "2016-08-14T01:04:48.564Z",
       "ProvisionedThroughput": {
         "NumberOfDecreasesToday": 0,
         "ReadCapacityUnits": 1,
@@ -246,7 +246,7 @@
         }
       ],
       "TableStatus": "CREATING",
-      "CreationDateTime": "2016-08-13T21:16:55.530Z",
+      "CreationDateTime": "2016-08-14T01:04:48.572Z",
       "ProvisionedThroughput": {
         "NumberOfDecreasesToday": 0,
         "ReadCapacityUnits": 1,
@@ -362,7 +362,7 @@
         }
       ],
       "TableStatus": "CREATING",
-      "CreationDateTime": "2016-08-13T21:16:55.539Z",
+      "CreationDateTime": "2016-08-14T01:04:48.577Z",
       "ProvisionedThroughput": {
         "NumberOfDecreasesToday": 0,
         "ReadCapacityUnits": 1,
@@ -453,7 +453,7 @@
         }
       ],
       "TableStatus": "CREATING",
-      "CreationDateTime": "2016-08-13T21:16:55.553Z",
+      "CreationDateTime": "2016-08-14T01:04:48.583Z",
       "ProvisionedThroughput": {
         "NumberOfDecreasesToday": 0,
         "ReadCapacityUnits": 1,
@@ -552,7 +552,7 @@
         }
       ],
       "TableStatus": "CREATING",
-      "CreationDateTime": "2016-08-13T21:16:55.563Z",
+      "CreationDateTime": "2016-08-14T01:04:48.589Z",
       "ProvisionedThroughput": {
         "NumberOfDecreasesToday": 0,
         "ReadCapacityUnits": 1,
@@ -668,7 +668,7 @@
         }
       ],
       "TableStatus": "CREATING",
-      "CreationDateTime": "2016-08-13T21:16:55.572Z",
+      "CreationDateTime": "2016-08-14T01:04:48.594Z",
       "ProvisionedThroughput": {
         "NumberOfDecreasesToday": 0,
         "ReadCapacityUnits": 1,
@@ -767,7 +767,7 @@
         }
       ],
       "TableStatus": "CREATING",
-      "CreationDateTime": "2016-08-13T21:16:55.581Z",
+      "CreationDateTime": "2016-08-14T01:04:48.600Z",
       "ProvisionedThroughput": {
         "NumberOfDecreasesToday": 0,
         "ReadCapacityUnits": 1,
@@ -871,7 +871,7 @@
         }
       ],
       "TableStatus": "CREATING",
-      "CreationDateTime": "2016-08-13T21:16:55.591Z",
+      "CreationDateTime": "2016-08-14T01:04:48.604Z",
       "ProvisionedThroughput": {
         "NumberOfDecreasesToday": 0,
         "ReadCapacityUnits": 1,

@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <base data-ice="baseUrl" href="../../">
+  <title data-ice="title">lib/actions.js | API Document</title>
+  <link type="text/css" rel="stylesheet" href="css/style.css">
+  <link type="text/css" rel="stylesheet" href="css/prettify-tomorrow.css">
+  <script src="script/prettify/prettify.js"></script>
+  
+  
+  <script src="script/manual.js"></script>
+</head>
+<body class="layout-container" data-ice="rootContainer">
+
+<header>
+  <a href="./">Home</a>
+  
+  <a href="identifiers.html">Reference</a>
+  <a href="source.html">Source</a>
+  
+  <a data-ice="repoURL" href="https://github.com/sdelrio0/pyrope.git" class="repo-url-github">Repository</a>
+  <div class="search-box">
+  <span>
+    <img src="./image/search.png">
+    <span class="search-input-edge"></span><input class="search-input"><span class="search-input-edge"></span>
+  </span>
+    <ul class="search-result"></ul>
+  </div>
+</header>
+
+<nav class="navigation" data-ice="nav"><div>
+  <ul>
+    
+  <li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-all">all</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-count">count</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-create">create</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-destroy">destroy</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-findByIndex">findByIndex</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-first">first</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-last">last</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-take">take</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-update">update</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-associate">associate</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-dissociate">dissociate</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-getAssociations">getAssociations</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-ddb">ddb</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-ddbClient">ddbClient</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-decreaseCounter">decreaseCounter</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-increaseCounter">increaseCounter</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-buildAction">buildAction</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-buildUpdateExpression">buildUpdateExpression</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-genTableDigest">genTableDigest</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-iterateArrayOverPromise">iterateArrayOverPromise</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-sha256">sha256</a></span></span></li>
+</ul>
+</div>
+</nav>
+
+<div class="content" data-ice="content"><h1 data-ice="title">lib/actions.js</h1>
+<pre class="source-code line-number raw-source-code"><code class="prettyprint linenums" data-ice="content">
+import { ddbClient } from &apos;./core&apos;;
+import { isNumber, isArray, isBoolean, isString, pluck, isObject, isFunction } from &apos;underscore&apos;;
+import { buildUpdateExpression, genTableDigest } from &apos;./utils&apos;;
+import { increaseCounter, decreaseCounter } from &apos;./counters&apos;;
+import { v4 } from &apos;uuid&apos;;
+
+const COUNTERS_TABLE_NAME = &apos;table_counters&apos;;
+
+/**
+ * Returns an array with the mappings for every record in the table.
+ *
+ * Results are returned sorted ascending. You can specify a limit  and a cursor
+ * to do batch fetching.
+ *
+ * opts = {
+ *  tableName: String,     // The name of the table
+ *  ascending: Boolean,    // Should the results be returned in a ascending manner?
+ *  limit: Integer,        // The amount of items to fetch
+ *  cursor: String         // A base64 encoded map of the key containing {uuid: String, createdAt: Number, _table: String}
+ * }
+ *
+ *
+ * @param {object} opts Options mapping.
+ * @return {array} An array with the QUERY result, has the structure {Items: [], Count: 0, Cursor: &apos;&apos;}
+ *
+ * @TODO: Select specific attributes to return.
+ */
+export const all = (opts) =&gt; new Promise((resolve, reject) =&gt; {
+  if(opts === undefined) return reject(`all(): &apos;opts&apos; is not defined.`);
+  
+  let { tableName, ascending = true, limit = 0, cursor } = opts;
+  
+  if(tableName === undefined || !isString(tableName)) return reject(`all(): &apos;tableName&apos; is undefined or not a string.`);
+  if(ascending &amp;&amp; !isBoolean(ascending)) return reject(`all(): &apos;ascending&apos; is not boolean.`);
+  if(limit &amp;&amp; !isNumber(limit)) return reject(`all(): &apos;limit&apos; is not a number.`);
+  if(cursor &amp;&amp; !isString(cursor)) return reject(`all(): &apos;cursor&apos; is not a string.`);
+  
+  let params = {
+    TableName: tableName,
+    IndexName: &apos;_tableIndex&apos;,
+    KeyConditionExpression: `#t = :t`,
+    ExpressionAttributeNames: {
+      &apos;#t&apos;: &apos;_table&apos;
+    },
+    ExpressionAttributeValues: {
+      &apos;:t&apos;: tableName
+    },
+    ScanIndexForward: ascending,
+    Select: &apos;ALL_ATTRIBUTES&apos;
+  };
+  
+  if(limit &amp;&amp; isNumber(limit) &amp;&amp; limit &gt; 0) {
+    params = {...params, Limit: limit};
+  }
+  
+  if(cursor) {
+    let startKey;
+    
+    try {
+      startKey = JSON.parse(new Buffer(cursor, &apos;base64&apos;).toString(&apos;ascii&apos;));
+    } catch(err) {
+      return reject(`all(): Error parsing cursor: ${err}`);
+    }
+    
+    params = {...params, ExclusiveStartKey: startKey};
+  }
+  
+  ddbClient(&apos;query&apos;, params)
+    .then(res =&gt; {
+      if(res.LastEvaluatedKey) {
+        res.Cursor = new Buffer(JSON.stringify(res.LastEvaluatedKey)).toString(&apos;base64&apos;);
+      }
+  
+      resolve(res);
+    })
+    .catch(err =&gt; reject(`all(): ${err}`));
+});
+
+export const take = (opts) =&gt; {
+  let { tableName, limit = 1, cursor, ascending = true } = opts;
+  
+  return all({tableName, limit, cursor, ascending});
+};
+
+export const first = (opts) =&gt; {
+  let { tableName, limit = 1, cursor } = opts;
+  
+  return take({tableName, limit, cursor});
+};
+
+export const last = (opts) =&gt; {
+  let { tableName, limit = 1, cursor } = opts;
+  
+  return take({tableName, limit, ascending: false, cursor});
+};
+
+/**
+ * Queries a table and looks for items matching the specified index.
+ *
+ * The index mapping has the following structure:
+ *
+ * index = {
+ *   username: &apos;john&apos;
+ * }
+ *
+ * In order to find the table&apos;s index, the word &apos;Index&apos; is appended, resulting
+ * in this example in &apos;usernameIndex&apos;
+ *
+ * Every index has a &apos;createdAt&apos; range key. This is calculated and
+ * appended automatically before querying.
+ *
+ * opts = {
+ *   tableName: String,
+ *   index: {hash: value, [range: value]},
+ *   ascending: Boolean
+ * }
+ *
+ * @param {object} opts Options mapping.
+ * @return {Array|Boolean} Array when there are multiple matches, false when not found
+ *
+ */
+export const findByIndex = (opts) =&gt; new Promise((resolve, reject) =&gt; {
+  if(opts === undefined) return reject(`findByIndex(): &apos;opts&apos; is not defined.`);
+  
+  let { tableName, index, ascending = true } = opts;
+  
+  if(tableName === undefined || !isString(tableName)) return reject(`findByIndex(): &apos;tableName&apos; is undefined or not a string.`);
+  if(index === undefined || !isObject(index)) return reject(`findByIndex(): &apos;index&apos; is undefined or not an object.`);
+  if(Object.keys(index).length &gt; 2) return reject(`findByIndex(): &apos;index&apos; should have at most 2 key-value pairs.`);
+  if(Object.keys(index).length &lt; 1) return reject(`findByIndex(): &apos;index&apos; should have at least 1 key-value pair.`);
+  
+  const indexKey = Object.keys(index)[0];
+  const indexValue = index[indexKey];
+  const indexName = Object.keys(index)[0] + &apos;Index&apos;;
+  
+  const params = {
+    TableName: tableName,
+    IndexName: indexName,
+    KeyConditionExpression: `#${indexKey} = :${indexKey}`,
+    ExpressionAttributeNames: {
+      [`#${indexKey}`]: indexKey,
+    },
+    ExpressionAttributeValues: {
+      [`:${indexKey}`]: indexValue
+    },
+    ScanIndexForward: ascending,
+    Select: &apos;ALL_ATTRIBUTES&apos;
+  };
+  
+  ddbClient(&apos;query&apos;, params)
+    .then(res =&gt; {
+      if(res.Items.length === 0) {
+        resolve(false); // not found
+      } else {
+        resolve(res.Items);
+      }
+    })
+    .catch(err =&gt; reject(`findByIndex(): ${err}`));
+});
+
+/**
+ * Returns the table&apos;s item count
+ *
+ * opts = {
+ *   tableName: String
+ * }
+ *
+ * @param {Object} opts The options object.
+ * @return {Number} The item count.
+ */
+export const count = ( opts ) =&gt; new Promise((resolve, reject) =&gt; {
+  if(opts === undefined) return reject(`count(): &apos;opts&apos; is not defined.`);
+  
+  const { tableName } = opts;
+  
+  if(tableName === undefined || !isString(tableName)) return reject(`count(): &apos;tableName&apos; is undefined or not a string.`);
+  
+  const counterTableName = process.env.NODE_ENV === &apos;test&apos; ? &apos;_test_&apos; + COUNTERS_TABLE_NAME : COUNTERS_TABLE_NAME;
+  
+  let count = 0;
+   
+  findByIndex({
+    tableName: counterTableName,
+    index: {tableDigest: genTableDigest(tableName)}
+  })
+    .then(res =&gt; {
+      if(res === false) {
+        resolve(0);
+      } else {
+        resolve(res[0].count);
+      }
+    })
+    .catch(err =&gt; reject(`count(): ${err}`));
+});
+
+/**
+ * Creates a new record in the specified table.
+ *
+ * It will create the record without any conditions.
+ * The following attributes are auto-generated: uuid, createdAt, updatedAt
+ *
+ * opts = {
+ *   tableName: &apos;users&apos;,
+ *   attributes: {
+ *     username: &apos;someguy55&apos;,
+ *     password: &apos;myPassword123&apos;
+ *   }
+ * }
+ *
+ * return = {
+ *   uuid: &apos;3f3e1091-8e43-41ca-a19a-881241370c31&apos; // String = &apos;S&apos;
+ *   username: &apos;someguy55&apos;,                       // String = &apos;S&apos;
+ *   password: &apos;myPassword123&apos;                    // String = &apos;S&apos;
+ *   createdAt: 1470345881706,                    // Number = &apos;N&apos;
+ *   updatedAt: 1470345881755                     // Number = &apos;N&apos;
+ * }
+ *
+ * @param {object} opts Options mapping.
+ * @return {object} The attributes of the newly created record, rejection on error
+ * @todo: Handle unprocessedItems
+ * @todo: Handle failed increaseCounter()
+ * @todo: let uuid, createdAt, updatedAt to be cofigurable ?
+ *
+ */
+export const create = (opts) =&gt; new Promise((resolve, reject) =&gt; {
+  // todo: Sanitize variables (convert empty strings to null)
+  if(opts === undefined) return reject(`create(): &apos;opts&apos; is not defined.`);
+  
+  let { tableName, attributes } = opts;
+  
+  if(tableName === undefined || !isString(tableName)) return reject(`create(): &apos;tableName&apos; is undefined or not a string.`);
+  if(attributes === undefined || !isObject(attributes)) return reject(`create(): &apos;attributes&apos; is undefined or not an object.`);
+  
+  attributes.uuid = v4();
+  attributes.createdAt = Number(new Date().getTime());
+  attributes.updatedAt = Number(new Date().getTime());
+  attributes._table = tableName;
+  
+  ddbClient(&apos;put&apos;, {
+    TableName: tableName,
+    Item: attributes
+  })
+    .then(() =&gt; increaseCounter({tableName}))
+    .then(() =&gt; resolve(attributes))
+    .catch(err =&gt; reject(`create(): ${err}`));
+});
+
+/**
+ * Updates an item
+ *
+ * Previously checks using findByIndex() if the item exits.
+ *  If it doesn&apos;t, returns false.
+ *
+ * opts = {
+ *   tableName: String,
+ *   index: Object,       // Index used to query the item.
+ *   args: Object,        // Key-Value mapping of the arguments to change.
+ *   beforeHook: (attrName, args) Function // Callback function for every attribute.
+ *                                            Used to modify the key-value mapping of the attributes to
+ *                                            change before the item is updated. Must return object of
+ *                                            shape {attributeName: value}
+ *                                            Attribute names may be also modified.
+ * }
+ *
+ * @param {Object} opts Options mapping
+ * @return {Object|Boolean} A key-value map with the updated attributes or false if not found.
+ * @todo: Handle unprocessedItems
+ *
+ */
+export const update = (opts) =&gt; new Promise((resolve, reject) =&gt; {
+  if(opts === undefined) return reject(`update(): &apos;opts&apos; is not defined.`);
+  
+  let { tableName, index, attributes, beforeHook } = opts;
+  
+  if(tableName === undefined || !isString(tableName)) return reject(`update(): &apos;tableName&apos; is undefined or not a string.`);
+  if(index === undefined || !isObject(index)) return reject(`update(): &apos;index&apos; is undefined or not an object.`);
+  if(Object.keys(index).length &lt; 1 || Object.keys(index).length &gt; 2) return reject(`update(): &apos;index&apos; should have at least 1 item and at most 2.`);
+  if(attributes === undefined || !isObject(attributes)) return reject(`update(): &apos;attributes&apos; is undefined or not an object.`);
+  if(beforeHook &amp;&amp; !isFunction(beforeHook)) return reject(`update(): &apos;beforeHook&apos; is not a function.`);
+  
+  findByIndex({
+    tableName,
+    index
+  })
+    .then(item =&gt; {
+      if(item === false) {
+        return Promise.resolve(false);
+      } else if(isArray(item) &amp;&amp; item.length &gt; 1) {
+        return Promise.reject(`Cannot update an array of items.`);
+      } else {
+        return Promise.resolve(item);
+      }
+    })
+    .then(item =&gt; {
+      if(isObject(item)) {
+        _update({...opts, index: {uuid: item[0].uuid, createdAt: item[0].createdAt}})
+          .then(item =&gt; resolve(item.Attributes))
+      } else {
+        resolve(false);
+      }
+    })
+    .catch(err =&gt; reject(`update(): ${err}`));
+});
+
+// Helper function that makes the actual update. This does not check if the item previously exists.
+const _update = (opts) =&gt; new Promise((resolve, reject) =&gt; {
+  if(opts === undefined) reject(`_update(): &apos;opts&apos; is not defined.`);
+  
+  let { tableName, index, attributes, beforeHook } = opts;
+  
+  if(tableName === undefined || !isString(tableName)) reject(`_update(): &apos;tableName&apos; is undefined or not a string.`);
+  if(index === undefined || !isObject(index)) reject(`_update(): &apos;index&apos; is undefined or not an object.`);
+  if(Object.keys(index).length &lt; 1 || Object.keys(index).length &gt; 2) reject(`_update(): &apos;index&apos; should have at least 1 item and at most 2.`);
+  if(attributes === undefined || !isObject(attributes)) reject(`_update(): &apos;attributes&apos; is undefined or not an object.`);
+  if(beforeHook &amp;&amp; !isFunction(beforeHook)) reject(`_update(): &apos;beforeHook&apos; is not a function.`);
+  
+  const hashKey = Object.keys(index)[0];
+  const hashValue = index[hashKey];
+  const rangeKey = Object.keys(index)[1];
+  const rangeValue = index[rangeKey];
+  
+  // Mock beforeHook returning all argument {key:value} untouched
+  if(!beforeHook) beforeHook = (attrName) =&gt; ({[attrName]: attributes[attrName]});
+  
+  buildUpdateExpression(attributes, beforeHook) // Build expression
+    .then(expression =&gt; ({ // Build params
+      TableName: tableName,
+      Key: {
+        [hashKey]: hashValue,
+        [rangeKey]: rangeValue
+      },
+      ReturnValues: &apos;ALL_NEW&apos;,
+      ...expression
+    }))
+    .then(params =&gt; ddbClient(&apos;update&apos;, params)) // DynamoDB Update
+    .then(res =&gt; resolve(res)) // Resolve results
+    .catch(err =&gt; reject(`_update(): ${err}`));
+});
+
+/**
+ * Deletes an item
+ *
+ * Previously checks using findByIndex() if the item exits.
+ *  If it doesn&apos;t, returns false, otherwise returns the deleted item.
+ *
+ * opts = {
+ *   tableName: String,
+ *   index: Object,       // Index used to query the item.
+ * }
+ *
+ * @param {Object} opts Options mapping
+ * @return {Object|Boolean} A key-value map with the deleted item&apos;s attributes, false if not found
+ * @todo: Handle unprocessedItems
+ *
+ */
+export const destroy = (opts) =&gt; new Promise((resolve, reject) =&gt; {
+  if(opts === undefined) return reject(`destroy(): &apos;opts&apos; is not defined.`);
+  
+  let { tableName, index } = opts;
+  
+  if(tableName === undefined || !isString(tableName)) return reject(`destroy(): &apos;tableName&apos; is undefined or not a string.`);
+  if(index === undefined || !isObject(index)) return reject(`destroy(): &apos;index&apos; is undefined or not an object.`);
+  if(Object.keys(index).length &lt; 1 || Object.keys(index).length &gt; 2) return reject(`destroy(): &apos;index&apos; should have at least 1 item and at most 2.`);
+  
+  findByIndex({
+    tableName,
+    index
+  })
+    .then(item =&gt; {
+      if(item === false) {
+        return Promise.resolve(false);
+      } else {
+        const deleteRequests = item.map(item =&gt; ({DeleteRequest: {Key: {uuid: item.uuid, createdAt: item.createdAt}}}));
+        
+        const params = {
+          RequestItems: {
+            [tableName]: deleteRequests
+          }
+        };
+        
+        return ddbClient(&apos;batchWrite&apos;, params)
+          .then(res =&gt; {
+            if(res.UnprocessedItems &amp;&amp; Object.keys(res.UnprocessedItems).length &gt; 0) return Promise.reject(&apos;destroy() batch: Warning, unprocessed items.&apos; + JSON.stringify(res.UnprocessedItems));
+  
+            return Promise.resolve(item[0]);
+          });
+      }
+    })
+    .then(item =&gt; {
+      if(isObject(item)) {
+        return decreaseCounter(opts).then(() =&gt; item);
+      } else {
+        return false;
+      }
+    })
+    .then((res) =&gt; resolve(res))
+    .catch(err =&gt; reject(`destroy(): ${err}`))
+});</code></pre>
+
+</div>
+
+<footer class="footer">
+  Generated by <a href="https://esdoc.org">ESDoc<span data-ice="esdocVersion">(0.4.7)</span></a>
+</footer>
+
+<script src="script/search_index.js"></script>
+<script src="script/search.js"></script>
+<script src="script/pretty-print.js"></script>
+<script src="script/inherited-summary.js"></script>
+<script src="script/test-summary.js"></script>
+<script src="script/inner-link.js"></script>
+<script src="script/patch-for-local.js"></script>
+</body>
+</html>

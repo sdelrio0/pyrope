@@ -12,6 +12,7 @@ node_js:
   - '4'
 before_install:
   - npm i -g npm@^2.0.0
+  - npm i -g ddb-migrate@0.2.5
 before_script:
   - npm prune
 script:

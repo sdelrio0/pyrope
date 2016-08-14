@@ -40,6 +40,7 @@ export const resetDatabase = () => {
   return new Promise((resolve, reject) => {
     exec('ddb clear -d ./__tests__/db/migrations -c ./__tests__/db/schema.json && ddb migrate -d ./__tests__/db/migrations -c ./__tests__/db/schema.json', {env: Object.assign({}, process.env, {NODE_ENV: 'test'})}, (err, stdout, stderr) => {
       if (err) return reject(stdout);
+      console.log(stdout);
       resolve(stdout);
     })
   });

@@ -3,15 +3,15 @@ import { exec } from 'child_process';
 import * as dynamo from '../lib';
 import { v4 } from 'uuid';
 import dynalite from 'dynalite';
+import Promise from 'bluebird';
 
-const dynaliteServer = dynalite({createTableMs: 0});
-const DYNALITE_PORT = 8000;
+export const dynaliteServer = Promise.promisifyAll(dynalite({path: './.dynamodb', createTableMs: 1, updateTableMs: 1, deleteTableMs: 1}));
+export const DYNALITE_PORT = 8000;
+export const TEST_TIMEOUT = 4000;
 
-// Start DynamoDB test server
-// dynaliteServer.listen(DYNALITE_PORT, function(err) {
-//   if (err) throw err;
-//   console.log(`Dynalite started on port ${DYNALITE_PORT}`);
-// });
+export const dynaliteSetup = () => dynaliteServer.listenAsync(DYNALITE_PORT);
+
+export const dynaliteTeardown = () => dynaliteServer.closeAsync();
 
 // Set environment variables
 process.env.NODE_ENV = 'test';

@@ -65,7 +65,7 @@
     "commitizen": {
       "path": "node_modules/cz-conventional-changelog"
     },
-    "ghooks": {
+    "_ghooks": {
       "pre-push": "npm run cover && npm run check-coverage"
     }
   }

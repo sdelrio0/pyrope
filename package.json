@@ -14,7 +14,8 @@
     "check-coverage": "nyc check-coverage --statements 10 --branches 10 --functions 10 --lines 10",
     "report-coverage": "cat ./coverage/lcov.info | codecov",
     "semantic-release": "semantic-release pre && npm publish && semantic-release post",
-    "commit": "git-cz"
+    "commit": "git-cz",
+    "dynamo": "dynalite --port 8000 --path .dynamodb --createTableMs 0 --deleteTableMs 0 --updateTableMs 0"
   },
   "repository": {
     "type": "git",

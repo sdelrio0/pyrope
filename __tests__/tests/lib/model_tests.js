@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import * as pyrope from '../../../lib';
-import { PyropeModel } from '../../../lib';
+import PyropeModel from '../../../lib';
 import { resetDatabase, createUser, createContact, createOrganization, createTransaction, createOperation } from '../../test_helper';
 import Promise from 'bluebird';
 const bcrypt = Promise.promisifyAll(require('bcryptjs'));
@@ -10,6 +10,12 @@ import { ContactType } from '../../collections/contacts/types';
 import { OrganizationType } from '../../collections/organizations/types';
 import { OperationType } from '../../collections/operations/types';
 import { TransactionType } from '../../collections/transactions/types';
+
+import * as userResolvers from '../../collections/users/resolvers';
+import * as contactResolvers from '../../collections/contacts/resolvers';
+import * as organizationResolvers from '../../collections/organizations/resolvers';
+import * as operationResolvers from '../../collections/operations/resolvers';
+import * as transactionResolvers from '../../collections/transactions/resolvers';
 
 import { validations as userValidations } from '../../collections/users/validations';
 import { TEST_TIMEOUT } from '../../test_helper';
@@ -345,7 +351,7 @@ describe.only('Model', function() {
     });
   });
   
-  xdescribe('Associations', function() {
+  describe('Associations', function() {
     let User = new PyropeModel(UserType, {table: '_test_users', defaultQueryKey: 'username'});
     let Contact = new PyropeModel(ContactType, {table: '_test_contacts', defaultQueryKey: 'username'});
     let Organization = new PyropeModel(OrganizationType, {table: '_test_organizations', defaultQueryKey: 'username'});
@@ -353,71 +359,136 @@ describe.only('Model', function() {
     let Transaction = new PyropeModel(TransactionType, {table: '_test_transactions', defaultQueryKey: 'username'});
     
     describe('1:1', function() {
-      xdescribe('setChild(u1, c1)', function() {
-        it('sets child', () => new Promise((resolve, reject) => {
+      describe('Association', function() {
+        it('setChild(u1, c1)', () => new Promise((resolve, reject) => {
           User.setChild(u1.uuid, {contact: c1.uuid}, {table: '_test_contacts_users'})
             .then(res => {
-              console.log(res);
-              resolve()
+              resolve(Promise.all([
+                expect(res).to.equal(true)
+              ]))
             })
             .catch(err => reject(err));
         }));
   
-        it('checks that association table count === 1', () => new Promise((resolve, reject) => {
-    
+        it('check getChild(u1, contact) == c1', () => new Promise((resolve, reject) => {
+          User.getChild(u1.uuid, 'contact', userResolvers.getContact, {table: '_test_contacts_users'})
+            .then(res => {
+              resolve(Promise.all([
+                expect(res).to.have.property('uuid', c1.uuid)
+              ]));
+            })
+            .catch(err => reject(err));
         }));
-      });
-   
-      xdescribe('getChild(u1, \'contact\')', function() {
-        it('checks that u1.contact === c1', () => new Promise((resolve, reject) => {
-          
-        }));
-      });
   
-      xdescribe('getChild(c1, \'user\')', function() {
-        it('checks that c1.user === u1', () => new Promise((resolve, reject) => {
-      
+        it('check getChild(c1, user) == u1', () => new Promise((resolve, reject) => {
+          Contact.getChild(c1.uuid, 'user', contactResolvers.getUser, {table: '_test_contacts_users'})
+            .then(res => {
+              resolve(Promise.all([
+                expect(res).to.have.property('uuid', u1.uuid)
+              ]));
+            })
+            .catch(err => reject(err));
+        }));
+  
+        it('check assoc. table count == 1', () => new Promise((resolve, reject) => {
+          pyrope.count({tableName: '_test_contacts_users'})
+            .then(res => resolve(Promise.all([
+              expect(res).to.equal(1)
+            ])))
+            .catch(err => reject(err));
         }));
       });
     
-      xdescribe('setChild(u1, c2)', function() {
-        it('sets child', () => new Promise((resolve, reject) => {
-          
+      describe('Reassociation', function() {
+        it('setChild(u1, c2)', () => new Promise((resolve, reject) => {
+          User.setChild(u1.uuid, {contact: c2.uuid}, {table: '_test_contacts_users'})
+            .then(res => {
+              resolve(Promise.all([
+                expect(res).to.equal(true)
+              ]))
+            })
+            .catch(err => reject(err));
         }));
-      
-        it('checks that u1.contact === c2', () => new Promise((resolve, reject) => {
-        
+  
+        it('check getChild(u1, contact) == c2', () => new Promise((resolve, reject) => {
+          User.getChild(u1.uuid, 'contact', userResolvers.getContact, {table: '_test_contacts_users'})
+            .then(res => {
+              resolve(Promise.all([
+                expect(res).to.have.property('uuid', c2.uuid)
+              ]));
+            })
+            .catch(err => reject(err));
         }));
-      
-        it('checks that c2.user === u1', () => new Promise((resolve, reject) => {
-        
+  
+        it('check getChild(c2, user) == u1', () => new Promise((resolve, reject) => {
+          Contact.getChild(c2.uuid, 'user', contactResolvers.getUser, {table: '_test_contacts_users'})
+            .then(res => {
+              resolve(Promise.all([
+                expect(res).to.have.property('uuid', u1.uuid)
+              ]));
+            })
+            .catch(err => reject(err));
         }));
-      
-        it('checks that association table count === 1', () => new Promise((resolve, reject) => {
         
+        it('check getChild(c1, user) == null', () => new Promise((resolve, reject) => {
+          Contact.getChild(c1.uuid, 'user', contactResolvers.getUser, {table: '_test_contacts_users'})
+            .then(res => {
+              resolve(Promise.all([
+                expect(res).to.equal(null)
+              ]));
+            })
+            .catch(err => reject(err));
+        }));
+        
+        it('check assoc. table count == 1', () => new Promise((resolve, reject) => {
+          pyrope.count({tableName: '_test_contacts_users'})
+            .then(res => resolve(Promise.all([
+              expect(res).to.equal(1)
+            ])))
+            .catch(err => reject(err));
         }));
       });
     
-      xdescribe('unsetChild(u1, \'contact\')', function() {
-        it('unsets child', () => new Promise((resolve, reject) => {
-        
+      describe('Dissociation', function() {
+        it('unsetChild(c2, user)', () => new Promise((resolve, reject) => {
+          Contact.unsetChild(c2.uuid, 'user', {table: '_test_contacts_users'})
+            .then(res => {
+              resolve(expect(res).to.equal(true))
+            })
+            .catch(err => reject(err));
         }));
       
-        it('checks that u1.contact === null', () => new Promise((resolve, reject) => {
-        
+        it('check getChild(u1, contact) == null', () => new Promise((resolve, reject) => {
+          User.getChild(u1.uuid, 'contact', userResolvers.getContact, {table: '_test_contacts_users'})
+            .then(res => {
+              resolve(Promise.all([
+                expect(res).to.equal(null)
+              ]));
+            })
+            .catch(err => reject(err));
         }));
-      
-        it('checks that c2.user === null', () => new Promise((resolve, reject) => {
-        
+  
+        it('check getChild(c2, user) == null', () => new Promise((resolve, reject) => {
+          Contact.getChild(c2.uuid, 'user', contactResolvers.getUser, {table: '_test_contacts_users'})
+            .then(res => {
+              resolve(Promise.all([
+                expect(res).to.equal(null)
+              ]));
+            })
+            .catch(err => reject(err));
         }));
       
         it('checks that association table count === 0', () => new Promise((resolve, reject) => {
-        
+          pyrope.count({tableName: '_test_contacts_users'})
+            .then(res => resolve(Promise.all([
+              expect(res).to.equal(0)
+            ])))
+            .catch(err => reject(err));
         }));
       });
     });
   
-    xdescribe('1:N', function() {
+    describe('1:N', function() {
       xdescribe('setChildren(p1, t1)', function() {
     
       });

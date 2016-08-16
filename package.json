@@ -15,7 +15,8 @@
     "report-coverage": "cat ./coverage/lcov.info | codecov",
     "semantic-release": "semantic-release pre && npm publish && semantic-release post",
     "commit": "git-cz",
-    "dynamo": "dynalite --port 8000 --path .dynamodb --createTableMs 0 --deleteTableMs 0 --updateTableMs 0"
+    "dynamo": "dynalite --port 8000 --path .dynamodb --createTableMs 0 --deleteTableMs 0 --updateTableMs 0",
+    "docs": "esdoc -c ./esdoc.json"
   },
   "repository": {
     "type": "git",

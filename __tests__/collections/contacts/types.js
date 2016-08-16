@@ -6,11 +6,11 @@ import {
   GraphQLInt
 } from 'graphql';
 
-import { User } from '../users/types';
-import { Organization } from '../organizations/types';
+import { UserType } from '../users/types';
+import { OrganizationType } from '../organizations/types';
 import * as resolvers from './resolvers';
 
-const Contact = new GraphQLObjectType({
+const ContactType = new GraphQLObjectType({
   name: 'Contact',
   description: 'A person\'s contact. It stores information about a person.',
   fields: () => ({
@@ -24,17 +24,17 @@ const Contact = new GraphQLObjectType({
       type: GraphQLString,
     },
     user: {
-      type: User,
+      type: UserType,
       hasMany: false,
       dependent: 'nullify',
       resolve: (source, args, context) => resolvers.getUser(source)
     },
     organizations: {
-      type: new GraphQLList(Organization),
+      type: new GraphQLList(OrganizationType),
       hasMany: true,
       resolve: (source, args, context) => resolvers.getOrganizations(source)
     }
   })
 });
 
-export { Contact };
+export { ContactType };

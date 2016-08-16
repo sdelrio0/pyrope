@@ -6,10 +6,10 @@ import {
   GraphQLInt
 } from 'graphql';
 
-import { Contact } from '../contacts/types';
+import { ContactType } from '../contacts/types';
 import * as resolvers from './resolvers';
 
-const User = new GraphQLObjectType({
+const UserType = new GraphQLObjectType({
   name: 'User',
   description: 'A user in the system.',
   fields: () => ({
@@ -43,7 +43,7 @@ const User = new GraphQLObjectType({
       type: GraphQLString,
     },
     contact: {
-      type: Contact,
+      type: ContactType,
       description: 'Associated contact to the user.',
       dependent: 'destroy', // destroy/nullify
       hasMany: false,
@@ -52,4 +52,4 @@ const User = new GraphQLObjectType({
   })
 });
 
-export { User };
+export { UserType };

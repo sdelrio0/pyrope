@@ -6,10 +6,10 @@ import {
   GraphQLInt
 } from 'graphql';
 
-import { Contact } from '../contacts/types';
+import { ContactType } from '../contacts/types';
 import * as resolvers from './resolvers';
 
-const Organization = new GraphQLObjectType({
+const OrganizationType = new GraphQLObjectType({
   name: 'Organization',
   description: 'An organization, business entity, etc.',
   fields: () => ({
@@ -23,7 +23,7 @@ const Organization = new GraphQLObjectType({
       type: GraphQLString,
     },
     contacts: {
-      type: new GraphQLList(Contact),
+      type: new GraphQLList(ContactType),
       dependent: 'nullify',
       hasMany: true,
       resolve: (source, args, context) => resolvers.getContacts(source)
@@ -31,4 +31,4 @@ const Organization = new GraphQLObjectType({
   })
 });
 
-export { Organization };
+export { OrganizationType };

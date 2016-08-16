@@ -5,11 +5,11 @@ import { resetDatabase, createUser, createContact, createOrganization, createTra
 import Promise from 'bluebird';
 const bcrypt = Promise.promisifyAll(require('bcryptjs'));
 
-import { User as UserType } from '../../collections/users/types';
-import { Contact as ContactType } from '../../collections/contacts/types';
-import { Organization as OrganizationType } from '../../collections/organizations/types';
-import { Operation as OperationType } from '../../collections/operations/types';
-import { Transaction as TransactionType } from '../../collections/transactions/types';
+import { UserType } from '../../collections/users/types';
+import { ContactType } from '../../collections/contacts/types';
+import { OrganizationType } from '../../collections/organizations/types';
+import { OperationType } from '../../collections/operations/types';
+import { TransactionType } from '../../collections/transactions/types';
 
 import { validations as userValidations } from '../../collections/users/validations';
 import { TEST_TIMEOUT } from '../../test_helper';
@@ -62,7 +62,7 @@ describe.only('Model', function() {
   });
   
   describe('get({uuid: u1.uuid})', function() {
-    let User = new PyropeModel(UserType, {table: '_test_users', defaultIndexKey: 'username'});
+    let User = new PyropeModel(UserType, {table: '_test_users', defaultQueryKey: 'username'});
     
     it('retrieves the proper fields', () => new Promise((resolve, reject) => {
       User.get({uuid: u1.uuid}).then(res => {
@@ -88,7 +88,7 @@ describe.only('Model', function() {
   
   describe('getAll()', function() {
     describe('getAll({})', function () {
-      let User = new PyropeModel(UserType, {table: '_test_users', defaultIndexKey: 'username'});
+      let User = new PyropeModel(UserType, {table: '_test_users', defaultQueryKey: 'username'});
     
       it('retrieves all users with proper fields', () => new Promise((resolve, reject) => {
         User.getAll().then(res => {
@@ -104,7 +104,7 @@ describe.only('Model', function() {
     });
   
     describe('getAll({order: \'desc\'})', function () {
-      let User = new PyropeModel(UserType, {table: '_test_users', defaultIndexKey: 'username'});
+      let User = new PyropeModel(UserType, {table: '_test_users', defaultQueryKey: 'username'});
     
       it('retrieves all users in desc. order with proper fields', () => new Promise((resolve, reject) => {
         User.getAll({order: 'desc'}).then(res => {
@@ -120,7 +120,7 @@ describe.only('Model', function() {
     });
   
     describe('getAll({limit: 1})', function () {
-      let User = new PyropeModel(UserType, {table: '_test_users', defaultIndexKey: 'username'});
+      let User = new PyropeModel(UserType, {table: '_test_users', defaultQueryKey: 'username'});
     
       it('retrieves 1 user and saves cursor', () => new Promise((resolve, reject) => {
         User.getAll({limit: 1}).then(res => {
@@ -137,7 +137,7 @@ describe.only('Model', function() {
     });
   
     describe('getAll({cursor})', function () {
-      let User = new PyropeModel(UserType, {table: '_test_users', defaultIndexKey: 'username'});
+      let User = new PyropeModel(UserType, {table: '_test_users', defaultQueryKey: 'username'});
     
       it('retrieves next 2 users using the cursor', () => new Promise((resolve, reject) => {
         User.getAll({cursor}).then(res => {
@@ -154,7 +154,7 @@ describe.only('Model', function() {
   
   describe('create()', function() {
     describe('create({username: \'user1\'})', function() {
-      let User = new PyropeModel(UserType, {table: '_test_users', defaultIndexKey: 'username'});
+      let User = new PyropeModel(UserType, {table: '_test_users', defaultQueryKey: 'username'});
       
       it('creates user with proper fields', () => new Promise((resolve, reject) => {
         User.create({username: 'user1'}).then(res => {
@@ -180,7 +180,7 @@ describe.only('Model', function() {
     });
   
     describe('create({username: \'user2\', password: \'password\'}, {beforeValidation, afterValidation, beforeCreate, afterCreate})', function() {
-      let User = new PyropeModel(UserType, {table: '_test_users', defaultIndexKey: 'username', validations: userValidations});
+      let User = new PyropeModel(UserType, {table: '_test_users', defaultQueryKey: 'username', validations: userValidations});
     
       const beforeValidation = (fields, fieldName) => new Promise((resolve, reject) => {
         resolve({...fields, beforeValidation: true});
@@ -223,7 +223,7 @@ describe.only('Model', function() {
   
   describe('update()', function() {
     describe('update(index, fields)', function() {
-      let User = new PyropeModel(UserType, {table: '_test_users', defaultIndexKey: 'username', validations: userValidations});
+      let User = new PyropeModel(UserType, {table: '_test_users', defaultQueryKey: 'username', validations: userValidations});
       
       it('updates record and return proper object mapping', () => new Promise((resolve, reject) => {
         User.update({username: 'user1'}, {username: 'user1_updated'}).then(res => {
@@ -247,7 +247,7 @@ describe.only('Model', function() {
     });
     
     describe('update(index, fields, {...hooks})', function() {
-      let User = new PyropeModel(UserType, {table: '_test_users', defaultIndexKey: 'username', validations: userValidations});
+      let User = new PyropeModel(UserType, {table: '_test_users', defaultQueryKey: 'username', validations: userValidations});
       
       const beforeValidation = (fields, fieldName) => new Promise((resolve, reject) => {
         resolve({...fields, beforeValidation: true});
@@ -302,7 +302,7 @@ describe.only('Model', function() {
   
   describe('destroy()', function() {
     describe('destroy(u1)', function() {
-      let User = new PyropeModel(UserType, {table: '_test_users', defaultIndexKey: 'username'});
+      let User = new PyropeModel(UserType, {table: '_test_users', defaultQueryKey: 'username'});
   
       const beforeValidation = (fields, fieldName) => new Promise((resolve, reject) => {
         resolve({...fields, beforeValidation: true});
@@ -345,12 +345,12 @@ describe.only('Model', function() {
     });
   });
   
-  describe('Associations', function() {
-    let User = new PyropeModel(UserType, {table: '_test_users', defaultIndexKey: 'username'});
-    let Contact = new PyropeModel(ContactType, {table: '_test_contacts', defaultIndexKey: 'username'});
-    let Organization = new PyropeModel(OrganizationType, {table: '_test_organizations', defaultIndexKey: 'username'});
-    let Operation = new PyropeModel(OperationType, {table: '_test_operations', defaultIndexKey: 'username'});
-    let Transaction = new PyropeModel(TransactionType, {table: '_test_transactions', defaultIndexKey: 'username'});
+  xdescribe('Associations', function() {
+    let User = new PyropeModel(UserType, {table: '_test_users', defaultQueryKey: 'username'});
+    let Contact = new PyropeModel(ContactType, {table: '_test_contacts', defaultQueryKey: 'username'});
+    let Organization = new PyropeModel(OrganizationType, {table: '_test_organizations', defaultQueryKey: 'username'});
+    let Operation = new PyropeModel(OperationType, {table: '_test_operations', defaultQueryKey: 'username'});
+    let Transaction = new PyropeModel(TransactionType, {table: '_test_transactions', defaultQueryKey: 'username'});
     
     describe('1:1', function() {
       xdescribe('setChild(u1, c1)', function() {

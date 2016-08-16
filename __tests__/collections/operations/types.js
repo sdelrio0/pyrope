@@ -6,10 +6,10 @@ import {
   GraphQLInt
 } from 'graphql';
 
-import { Transaction } from '../transactions/types';
+import { TransactionType } from '../transactions/types';
 import * as resolvers from './resolvers';
 
-const Operation = new GraphQLObjectType({
+const OperationType = new GraphQLObjectType({
   name: 'Operation',
   description: '',
   fields: () => ({
@@ -23,7 +23,7 @@ const Operation = new GraphQLObjectType({
       type: GraphQLString,
     },
     transactions: {
-      type: new GraphQLList(Transaction),
+      type: new GraphQLList(TransactionType),
       dependent: 'nullify', // dissociate when a transaction is deleted
       hasMany: true,
       resolve: (source, args, context) => resolvers.getTransactions(source)
@@ -31,4 +31,4 @@ const Operation = new GraphQLObjectType({
   })
 });
 
-export { Operation };
+export { OperationType };

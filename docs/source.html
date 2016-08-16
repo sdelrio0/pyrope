@@ -32,7 +32,8 @@
 <nav class="navigation" data-ice="nav"><div>
   <ul>
     
-  <li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-all">all</a></span></span></li>
+  <li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/lib/models.js~PyropeModel.html">PyropeModel</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-all">all</a></span></span></li>
 <li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-count">count</a></span></span></li>
 <li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-create">create</a></span></span></li>
 <li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-destroy">destroy</a></span></span></li>
@@ -48,6 +49,7 @@
 <li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-ddbClient">ddbClient</a></span></span></li>
 <li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-decreaseCounter">decreaseCounter</a></span></span></li>
 <li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-increaseCounter">increaseCounter</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-updateCounter">updateCounter</a></span></span></li>
 <li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-buildAction">buildAction</a></span></span></li>
 <li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-buildUpdateExpression">buildUpdateExpression</a></span></span></li>
 <li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-genTableDigest">genTableDigest</a></span></span></li>
@@ -57,7 +59,7 @@
 </div>
 </nav>
 
-<div class="content" data-ice="content"><h1>Source <img data-ice="coverageBadge" src="./badge.svg"><span data-ice="totalCoverageCount" class="total-coverage-count">11/21</span></h1>
+<div class="content" data-ice="content"><h1>Source <img data-ice="coverageBadge" src="./badge.svg"><span data-ice="totalCoverageCount" class="total-coverage-count">19/43</span></h1>
 
 <table class="files-summary" data-ice="files" data-use-coverage="true">
   <thead>
@@ -73,7 +75,7 @@
   <tbody>
     
   <tr data-ice="file">
-      <td data-ice="filePath"><span><a href="file/lib/actions.js.html#errorLines=80,86,92">lib/actions.js</a></span></td>
+      <td data-ice="filePath"><span><a href="file/lib/actions.js.html#errorLines=82,88,94">lib/actions.js</a></span></td>
       <td data-ice="identifier" class="identifiers"><span><a href="variable/index.html#static-variable-all">all</a></span>
 <span><a href="variable/index.html#static-variable-count">count</a></span>
 <span><a href="variable/index.html#static-variable-create">create</a></span>
@@ -84,9 +86,9 @@
 <span><a href="variable/index.html#static-variable-take">take</a></span>
 <span><a href="variable/index.html#static-variable-update">update</a></span></td>
       <td class="coverage"><span data-ice="coverage">66 %</span><span data-ice="coverageCount" class="coverage-count">6/9</span></td>
-      <td style="display: none;" data-ice="size">13820 byte</td>
-      <td style="display: none;" data-ice="lines">398</td>
-      <td style="display: none;" data-ice="updated">2016-08-01 20:17:24 (UTC)</td>
+      <td style="display: none;" data-ice="size">13918 byte</td>
+      <td style="display: none;" data-ice="lines">412</td>
+      <td style="display: none;" data-ice="updated">2016-08-03 01:53:39 (UTC)</td>
     </tr>
 <tr data-ice="file">
       <td data-ice="filePath"><span><a href="file/lib/associations.js.html">lib/associations.js</a></span></td>
@@ -94,9 +96,9 @@
 <span><a href="variable/index.html#static-variable-dissociate">dissociate</a></span>
 <span><a href="variable/index.html#static-variable-getAssociations">getAssociations</a></span></td>
       <td class="coverage"><span data-ice="coverage">100 %</span><span data-ice="coverageCount" class="coverage-count">3/3</span></td>
-      <td style="display: none;" data-ice="size">12133 byte</td>
-      <td style="display: none;" data-ice="lines">326</td>
-      <td style="display: none;" data-ice="updated">2016-08-01 20:18:10 (UTC)</td>
+      <td style="display: none;" data-ice="size">12426 byte</td>
+      <td style="display: none;" data-ice="lines">334</td>
+      <td style="display: none;" data-ice="updated">2016-08-03 17:46:18 (UTC)</td>
     </tr>
 <tr data-ice="file">
       <td data-ice="filePath"><span><a href="file/lib/core.js.html#errorLines=14,28">lib/core.js</a></span></td>
@@ -108,21 +110,30 @@
       <td style="display: none;" data-ice="updated">2016-08-01 01:15:08 (UTC)</td>
     </tr>
 <tr data-ice="file">
-      <td data-ice="filePath"><span><a href="file/lib/counters.js.html#errorLines=5,7">lib/counters.js</a></span></td>
+      <td data-ice="filePath"><span><a href="file/lib/counters.js.html#errorLines=5,7,9">lib/counters.js</a></span></td>
       <td data-ice="identifier" class="identifiers"><span><a href="variable/index.html#static-variable-decreaseCounter">decreaseCounter</a></span>
-<span><a href="variable/index.html#static-variable-increaseCounter">increaseCounter</a></span></td>
-      <td class="coverage"><span data-ice="coverage">0 %</span><span data-ice="coverageCount" class="coverage-count">0/2</span></td>
-      <td style="display: none;" data-ice="size">1249 byte</td>
+<span><a href="variable/index.html#static-variable-increaseCounter">increaseCounter</a></span>
+<span><a href="variable/index.html#static-variable-updateCounter">updateCounter</a></span></td>
+      <td class="coverage"><span data-ice="coverage">0 %</span><span data-ice="coverageCount" class="coverage-count">0/3</span></td>
+      <td style="display: none;" data-ice="size">1256 byte</td>
       <td style="display: none;" data-ice="lines">37</td>
-      <td style="display: none;" data-ice="updated">2016-08-07 20:35:06 (UTC)</td>
+      <td style="display: none;" data-ice="updated">2016-08-02 00:37:36 (UTC)</td>
     </tr>
 <tr data-ice="file">
       <td data-ice="filePath"><span><a href="file/lib/index.js.html">lib/index.js</a></span></td>
       <td data-ice="identifier" class="identifiers">-</td>
       <td class="coverage"><span data-ice="coverage">-</span></td>
-      <td style="display: none;" data-ice="size">356 byte</td>
-      <td style="display: none;" data-ice="lines">11</td>
-      <td style="display: none;" data-ice="updated">2016-08-07 20:35:06 (UTC)</td>
+      <td style="display: none;" data-ice="size">422 byte</td>
+      <td style="display: none;" data-ice="lines">14</td>
+      <td style="display: none;" data-ice="updated">2016-08-03 16:44:05 (UTC)</td>
+    </tr>
+<tr data-ice="file">
+      <td data-ice="filePath"><span><a href="file/lib/models.js.html#errorLines=156,207,292,328,33,34,35,36,37,38,416,420,424">lib/models.js</a></span></td>
+      <td data-ice="identifier" class="identifiers"><span><a href="class/lib/models.js~PyropeModel.html">PyropeModel</a></span></td>
+      <td class="coverage"><span data-ice="coverage">38 %</span><span data-ice="coverageCount" class="coverage-count">8/21</span></td>
+      <td style="display: none;" data-ice="size">15075 byte</td>
+      <td style="display: none;" data-ice="lines">426</td>
+      <td style="display: none;" data-ice="updated">2016-08-03 18:16:37 (UTC)</td>
     </tr>
 <tr data-ice="file">
       <td data-ice="filePath"><span><a href="file/lib/utils.js.html#errorLines=63,73,99">lib/utils.js</a></span></td>

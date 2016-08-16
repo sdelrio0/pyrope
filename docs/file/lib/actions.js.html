@@ -32,7 +32,8 @@
 <nav class="navigation" data-ice="nav"><div>
   <ul>
     
-  <li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-all">all</a></span></span></li>
+  <li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/lib/models.js~PyropeModel.html">PyropeModel</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-all">all</a></span></span></li>
 <li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-count">count</a></span></span></li>
 <li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-create">create</a></span></span></li>
 <li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-destroy">destroy</a></span></span></li>
@@ -48,6 +49,7 @@
 <li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-ddbClient">ddbClient</a></span></span></li>
 <li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-decreaseCounter">decreaseCounter</a></span></span></li>
 <li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-increaseCounter">increaseCounter</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-updateCounter">updateCounter</a></span></span></li>
 <li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-buildAction">buildAction</a></span></span></li>
 <li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-buildUpdateExpression">buildUpdateExpression</a></span></span></li>
 <li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-genTableDigest">genTableDigest</a></span></span></li>
@@ -73,12 +75,14 @@ const COUNTERS_TABLE_NAME = &apos;table_counters&apos;;
  * Results are returned sorted ascending. You can specify a limit  and a cursor
  * to do batch fetching.
  *
+ * ```
  * opts = {
  *  tableName: String,     // The name of the table
  *  ascending: Boolean,    // Should the results be returned in a ascending manner?
  *  limit: Integer,        // The amount of items to fetch
  *  cursor: String         // A base64 encoded map of the key containing {uuid: String, createdAt: Number, _table: String}
  * }
+ * ```
  *
  *
  * @param {object} opts Options mapping.
@@ -160,9 +164,11 @@ export const last = (opts) =&gt; {
  *
  * The index mapping has the following structure:
  *
+ * ```
  * index = {
  *   username: &apos;john&apos;
  * }
+ * ```
  *
  * In order to find the table&apos;s index, the word &apos;Index&apos; is appended, resulting
  * in this example in &apos;usernameIndex&apos;
@@ -170,11 +176,13 @@ export const last = (opts) =&gt; {
  * Every index has a &apos;createdAt&apos; range key. This is calculated and
  * appended automatically before querying.
  *
+ * ```
  * opts = {
  *   tableName: String,
  *   index: {hash: value, [range: value]},
  *   ascending: Boolean
  * }
+ * ```
  *
  * @param {object} opts Options mapping.
  * @return {Array|Boolean} Array when there are multiple matches, false when not found
@@ -222,9 +230,11 @@ export const findByIndex = (opts) =&gt; new Promise((resolve, reject) =&gt; {
 /**
  * Returns the table&apos;s item count
  *
+ * ```
  * opts = {
  *   tableName: String
  * }
+ * ```
  *
  * @param {Object} opts The options object.
  * @return {Number} The item count.
@@ -260,6 +270,7 @@ export const count = ( opts ) =&gt; new Promise((resolve, reject) =&gt; {
  * It will create the record without any conditions.
  * The following attributes are auto-generated: uuid, createdAt, updatedAt
  *
+ * ```
  * opts = {
  *   tableName: &apos;users&apos;,
  *   attributes: {
@@ -275,6 +286,7 @@ export const count = ( opts ) =&gt; new Promise((resolve, reject) =&gt; {
  *   createdAt: 1470345881706,                    // Number = &apos;N&apos;
  *   updatedAt: 1470345881755                     // Number = &apos;N&apos;
  * }
+ * ```
  *
  * @param {object} opts Options mapping.
  * @return {object} The attributes of the newly created record, rejection on error
@@ -312,6 +324,7 @@ export const create = (opts) =&gt; new Promise((resolve, reject) =&gt; {
  * Previously checks using findByIndex() if the item exits.
  *  If it doesn&apos;t, returns false.
  *
+ * ```
  * opts = {
  *   tableName: String,
  *   index: Object,       // Index used to query the item.
@@ -322,6 +335,7 @@ export const create = (opts) =&gt; new Promise((resolve, reject) =&gt; {
  *                                            shape {attributeName: value}
  *                                            Attribute names may be also modified.
  * }
+ * ```
  *
  * @param {Object} opts Options mapping
  * @return {Object|Boolean} A key-value map with the updated attributes or false if not found.
@@ -404,10 +418,12 @@ const _update = (opts) =&gt; new Promise((resolve, reject) =&gt; {
  * Previously checks using findByIndex() if the item exits.
  *  If it doesn&apos;t, returns false, otherwise returns the deleted item.
  *
+ * ```
  * opts = {
  *   tableName: String,
  *   index: Object,       // Index used to query the item.
  * }
+ * ```
  *
  * @param {Object} opts Options mapping
  * @return {Object|Boolean} A key-value map with the deleted item&apos;s attributes, false if not found

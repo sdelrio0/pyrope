@@ -32,7 +32,8 @@
 <nav class="navigation" data-ice="nav"><div>
   <ul>
     
-  <li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-all">all</a></span></span></li>
+  <li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/lib/models.js~PyropeModel.html">PyropeModel</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-all">all</a></span></span></li>
 <li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-count">count</a></span></span></li>
 <li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-create">create</a></span></span></li>
 <li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-destroy">destroy</a></span></span></li>
@@ -48,6 +49,7 @@
 <li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-ddbClient">ddbClient</a></span></span></li>
 <li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-decreaseCounter">decreaseCounter</a></span></span></li>
 <li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-increaseCounter">increaseCounter</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-updateCounter">updateCounter</a></span></span></li>
 <li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-buildAction">buildAction</a></span></span></li>
 <li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-buildUpdateExpression">buildUpdateExpression</a></span></span></li>
 <li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-genTableDigest">genTableDigest</a></span></span></li>
@@ -63,6 +65,7 @@ import { findByIndex, create, destroy } from &apos;./actions&apos;;
 import { difference, intersection, isObject, isArray, isBoolean, isString, pluck } from &apos;underscore&apos;;
 import { ddbClient } from &apos;./core&apos;;
 import { iterateArrayOverPromise, buildAction } from &apos;./utils&apos;;
+import { updateCounter } from &apos;./counters&apos;;
 
 const DEBUG = false;
 
@@ -92,15 +95,15 @@ const log = (msg) =&gt; {if(DEBUG)console.log(msg)};
  *
  */
 export const associate = ( opts ) =&gt; {
-  if(opts === undefined) return Promise.reject(`associate(): opts should be an object.`);
+  if(opts === undefined) return Promise.reject(`associate() &gt; opts should be an object.`);
   
   const { tableName, items } = opts;
   
   // General validations
-  if(tableName === undefined || !isString(tableName)) return Promise.reject(`associate(): &apos;tableName&apos; is undefined or not a string.`);
-  if(items === undefined || !isArray(items)) return Promise.reject(`associate(): &apos;items&apos; is undefined or not an array.`);
-  if(items.length !== 2) return Promise.reject(`associate(): &apos;items&apos; should have 2 elements.`);
-  if((items[0].hasMany &amp;&amp; !isBoolean(items[0].hasMany)) || (items[1].hasMany &amp;&amp; !isBoolean(items[1].hasMany))) return Promise.reject(`associate(): &apos;hasMany&apos; should be boolean`);
+  if(tableName === undefined || !isString(tableName)) return Promise.reject(`associate() &gt; &apos;tableName&apos; is undefined or not a string.`);
+  if(items === undefined || !isArray(items)) return Promise.reject(`associate() &gt; &apos;items&apos; is undefined or not an array.`);
+  if(items.length !== 2) return Promise.reject(`associate() &gt; &apos;items&apos; should have 2 elements.`);
+  if((items[0].hasMany &amp;&amp; !isBoolean(items[0].hasMany)) || (items[1].hasMany &amp;&amp; !isBoolean(items[1].hasMany))) return Promise.reject(`associate() &gt; &apos;hasMany&apos; should be boolean`);
    
   log(&apos;===========================================&apos;);
   log(`Associating: \n${JSON.stringify(items, null, 2)}`);
@@ -112,7 +115,7 @@ export const associate = ( opts ) =&gt; {
     log(`prevItemAction = ${JSON.stringify(prevItemAction, null, 2)}`);
     
     // Item validations
-    if(Object.keys(item.index).length !== 1) return Promise.reject(`associate(): &apos;items[${i}].index&apos; should have only 1 key-value pair.`);
+    if(Object.keys(item.index).length !== 1) return Promise.reject(`associate() &gt; &apos;items[${i}].index&apos; should have only 1 key-value pair.`);
     
     const index = item.index;
     const indexKey = Object.keys(index)[0];
@@ -136,6 +139,8 @@ export const associate = ( opts ) =&gt; {
         tableName,
         index: currIndex
       }).then(itemAssociations =&gt; {
+        log(&apos;item associations&apos;, itemAssociations)
+        
         // Write current item&apos;s uuid if nothing found
         if(itemAssociations === false) {
           log(`No previous associations...`);
@@ -242,7 +247,7 @@ export const associate = ( opts ) =&gt; {
     } else {
       return false;
     }
-  }).catch(err =&gt; Promise.reject(`associate(): ${err}`));
+  }).catch(err =&gt; Promise.reject(`associate() &gt; ${err}`));
 };
 
 
@@ -273,17 +278,17 @@ export const associate = ( opts ) =&gt; {
  *
  */
 export const dissociate = ( opts ) =&gt; {
-  if(!isObject(opts)) return Promise.reject(`dissociate(): &apos;opts&apos; should be an object.`);
+  if(!isObject(opts)) return Promise.reject(`dissociate() &gt; &apos;opts&apos; should be an object.`);
   
   const { tableName, items } = opts;
   
   let deleteRequests = [];
   
   // Validations
-  if(items === undefined || !isArray(items)) return Promise.reject(`dissociate(): &apos;items&apos; is undefined or not an array.`);
-  if(tableName === undefined) return Promise.reject(`dissociate(): &apos;tableName&apos; is undefined or not a string.`);
-  if(items.length !== 2) return Promise.reject(`dissociate(): &apos;items&apos; should have 2 elements.`);
-  if(items[0].index === undefined || items[1].index === undefined) return Promise.reject(`dissociate(): &apos;items&apos; should have an index.`);
+  if(items === undefined || !isArray(items)) return Promise.reject(`dissociate() &gt; &apos;items&apos; is undefined or not an array.`);
+  if(tableName === undefined) return Promise.reject(`dissociate() &gt; &apos;tableName&apos; is undefined or not a string.`);
+  if(items.length !== 2) return Promise.reject(`dissociate() &gt; &apos;items&apos; should have 2 elements.`);
+  if(items[0].index === undefined || items[1].index === undefined) return Promise.reject(`dissociate() &gt; &apos;items&apos; should have an index.`);
   
   const index = items[0].index;
   const indexKey = Object.keys(index)[0];
@@ -298,7 +303,7 @@ export const dissociate = ( opts ) =&gt; {
         otherIndex[otherIndexKey] :
         [otherIndex[otherIndexKey]];
   
-  if(isArray(indexValues)) return Promise.reject(`dissociate(): items[0] index value (uuid) cannot be an array.`);
+  if(isArray(indexValues)) return Promise.reject(`dissociate() &gt; items[0] index value (uuid) cannot be an array.`);
   
   log(`Dissociating ${JSON.stringify(opts, null, 2)}`);
     
@@ -334,14 +339,19 @@ export const dissociate = ( opts ) =&gt; {
     };
   
     log(`dissociate params: ${JSON.stringify(params, null, 2)}`);
-  
-    return ddbClient(&apos;batchWrite&apos;, params)
-      .then(res =&gt; {
-        if(res.UnprocessedItems &amp;&amp; Object.keys(res.UnprocessedItems).length &gt; 0) return Promise.reject(&apos;dissociate() batch: Warning, unprocessed items.&apos; + JSON.stringify(res.UnprocessedItems, null, 2));
-        
-        return Promise.resolve(true);
-      })
-  }).catch(err =&gt; Promise.reject(`dissociate(): ${err}`))
+    
+    return Promise.resolve(params);
+  })
+    .then(params =&gt; ddbClient(&apos;batchWrite&apos;, params)
+    .then(res =&gt; {
+      if(res.UnprocessedItems &amp;&amp; Object.keys(res.UnprocessedItems).length &gt; 0) return Promise.reject(&apos;dissociate() batch: Warning, unprocessed items.&apos; + JSON.stringify(res.UnprocessedItems, null, 2));
+    })
+    .then(() =&gt; updateCounter({
+      tableName,
+      step: -1 * deleteRequests.length
+    }))
+    .then(() =&gt; Promise.resolve(true)))
+    .catch(err =&gt; Promise.reject(`dissociate() &gt; ${err}`))
 };
 
 /**
@@ -362,18 +372,18 @@ export const dissociate = ( opts ) =&gt; {
  *  ```
  *
  *  @params {Object} opts The options object.
- *  @return {Promised Array}
+ *  @return {Promise} - Array of uuids, [] if no assoc. found
  */
 export const getAssociations = ( opts ) =&gt; new Promise((resolve, reject) =&gt; {
-  if(!isObject(opts)) return reject(`getAssociations(): &apos;opts&apos; should be an object.`);
+  if(!isObject(opts)) return reject(`getAssociations() &gt; &apos;opts&apos; should be an object.`);
   
   const { tableName, items } = opts;
   
-  if(items === undefined || !isArray(items)) return reject(`getAssociations(): &apos;items&apos; is undefined or not an array.`);
-  if(tableName === undefined) return reject(`getAssociations(): &apos;tableName&apos; is undefined or not a string.`);
-  if(items.length !== 2) return reject(`getAssociations(): &apos;items&apos; should have 2 elements.`);
-  if(!isObject(items[0].index)) return reject(`getAssociations(): items[0].index should be an object.`);
-  if(!isString(items[1].index)) return reject(`getAssociations(): items[1].index should be a string.`);
+  if(items === undefined || !isArray(items)) return reject(`getAssociations() &gt; &apos;items&apos; is undefined or not an array.`);
+  if(tableName === undefined) return reject(`getAssociations() &gt; &apos;tableName&apos; is undefined or not a string.`);
+  if(items.length !== 2) return reject(`getAssociations() &gt; &apos;items&apos; should have 2 elements.`);
+  if(!isObject(items[0].index)) return reject(`getAssociations() &gt; items[0].index should be an object.`);
+  if(!isString(items[1].index)) return reject(`getAssociations() &gt; items[1].index should be a string.`);
   
   const indexKey = Object.keys(items[0].index)[0];
   const indexValue = items[0].index[indexKey];
@@ -383,7 +393,7 @@ export const getAssociations = ( opts ) =&gt; new Promise((resolve, reject) =&gt
     index: {[indexKey]: indexValue}
   })
     .then(res =&gt; resolve(pluck(res, items[1].index)))
-    .catch(err =&gt; reject(`getAssociations(): ${err}`));
+    .catch(err =&gt; reject(`getAssociations() &gt; ${err}`));
 });</code></pre>
 
 </div>

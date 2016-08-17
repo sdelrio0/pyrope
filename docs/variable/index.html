@@ -32,7 +32,8 @@
 <nav class="navigation" data-ice="nav"><div>
   <ul>
     
-  <li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-all">all</a></span></span></li>
+  <li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/lib/models.js~PyropeModel.html">PyropeModel</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-all">all</a></span></span></li>
 <li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-count">count</a></span></span></li>
 <li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-create">create</a></span></span></li>
 <li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-destroy">destroy</a></span></span></li>
@@ -48,6 +49,7 @@
 <li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-ddbClient">ddbClient</a></span></span></li>
 <li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-decreaseCounter">decreaseCounter</a></span></span></li>
 <li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-increaseCounter">increaseCounter</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-updateCounter">updateCounter</a></span></span></li>
 <li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-buildAction">buildAction</a></span></span></li>
 <li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-buildUpdateExpression">buildUpdateExpression</a></span></span></li>
 <li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-genTableDigest">genTableDigest</a></span></span></li>
@@ -183,10 +185,10 @@
         
         
         <div data-ice="description"><p>Returns the table&apos;s item count</p>
-<p>opts = {
+<pre><code><code class="source-code prettyprint">opts = {
   tableName: String
-}</p>
-</div>
+}</code>
+</code></pre></div>
       </div>
     </td>
     <td>
@@ -434,7 +436,7 @@
     <td>
       <div>
         <p>
-           <span data-ice="name"><span><a href="variable/index.html#static-variable-getAssociations">getAssociations</a></span></span><span data-ice="signature">: <span>Promised Array</span>: <span>*</span></span>
+           <span data-ice="name"><span><a href="variable/index.html#static-variable-getAssociations">getAssociations</a></span></span><span data-ice="signature">: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a></span>: <span>*</span></span>
         </p>
       </div>
       <div>
@@ -603,6 +605,31 @@ If chaining is true, the resolved value is passed
       
     </td>
   </tr>
+<tr data-ice="target">
+    <td>
+      <span class="access" data-ice="access">public</span>
+      
+      
+      
+      <span class="override" data-ice="override"></span>
+    </td>
+    <td>
+      <div>
+        <p>
+           <span data-ice="name"><span><a href="variable/index.html#static-variable-updateCounter">updateCounter</a></span></span><span data-ice="signature">: <span>*</span></span>
+        </p>
+      </div>
+      <div>
+        
+        
+        
+      </div>
+    </td>
+    <td>
+      
+      
+    </td>
+  </tr>
 </tbody>
 </table>
 </div>
@@ -619,23 +646,23 @@ If chaining is true, the resolved value is passed
     <span class="right-info">
       
       
-      <span data-ice="source"><span><a href="file/lib/actions.js.html#lineNumber29">source</a></span></span>
+      <span data-ice="source"><span><a href="file/lib/actions.js.html#lineNumber31">source</a></span></span>
     </span>
   </h3>
 
-  <div data-ice="importPath" class="import-path"><pre class="prettyprint"><code data-ice="importPathCode">import {all} from &apos;<span><a href="file/lib/actions.js.html#lineNumber29">pyrope/lib/actions.js</a></span>&apos;</code></pre></div>
+  <div data-ice="importPath" class="import-path"><pre class="prettyprint"><code data-ice="importPathCode">import {all} from &apos;<span><a href="file/lib/actions.js.html#lineNumber31">pyrope/lib/actions.js</a></span>&apos;</code></pre></div>
   
   
   <div data-ice="description"><p>Returns an array with the mappings for every record in the table.</p>
 <p>Results are returned sorted ascending. You can specify a limit  and a cursor
 to do batch fetching.</p>
-<p>opts = {
+<pre><code><code class="source-code prettyprint">opts = {
  tableName: String,     // The name of the table
  ascending: Boolean,    // Should the results be returned in a ascending manner?
  limit: Integer,        // The amount of items to fetch
  cursor: String         // A base64 encoded map of the key containing {uuid: String, createdAt: Number, _table: String}
-}</p>
-</div>
+}</code>
+</code></pre></div>
 
   
 
@@ -680,11 +707,11 @@ to do batch fetching.</p>
     <span class="right-info">
       
       
-      <span data-ice="source"><span><a href="file/lib/associations.js.html#lineNumber34">source</a></span></span>
+      <span data-ice="source"><span><a href="file/lib/associations.js.html#lineNumber35">source</a></span></span>
     </span>
   </h3>
 
-  <div data-ice="importPath" class="import-path"><pre class="prettyprint"><code data-ice="importPathCode">import {associate} from &apos;<span><a href="file/lib/associations.js.html#lineNumber34">pyrope/lib/associations.js</a></span>&apos;</code></pre></div>
+  <div data-ice="importPath" class="import-path"><pre class="prettyprint"><code data-ice="importPathCode">import {associate} from &apos;<span><a href="file/lib/associations.js.html#lineNumber35">pyrope/lib/associations.js</a></span>&apos;</code></pre></div>
   
   
   <div data-ice="description"><p>Creates associations between entities</p>
@@ -838,18 +865,18 @@ to do batch fetching.</p>
     <span class="right-info">
       
       
-      <span data-ice="source"><span><a href="file/lib/actions.js.html#lineNumber172">source</a></span></span>
+      <span data-ice="source"><span><a href="file/lib/actions.js.html#lineNumber180">source</a></span></span>
     </span>
   </h3>
 
-  <div data-ice="importPath" class="import-path"><pre class="prettyprint"><code data-ice="importPathCode">import {count} from &apos;<span><a href="file/lib/actions.js.html#lineNumber172">pyrope/lib/actions.js</a></span>&apos;</code></pre></div>
+  <div data-ice="importPath" class="import-path"><pre class="prettyprint"><code data-ice="importPathCode">import {count} from &apos;<span><a href="file/lib/actions.js.html#lineNumber180">pyrope/lib/actions.js</a></span>&apos;</code></pre></div>
   
   
   <div data-ice="description"><p>Returns the table&apos;s item count</p>
-<p>opts = {
+<pre><code><code class="source-code prettyprint">opts = {
   tableName: String
-}</p>
-</div>
+}</code>
+</code></pre></div>
 
   
 
@@ -893,31 +920,32 @@ to do batch fetching.</p>
     <span class="right-info">
       
       
-      <span data-ice="source"><span><a href="file/lib/actions.js.html#lineNumber226">source</a></span></span>
+      <span data-ice="source"><span><a href="file/lib/actions.js.html#lineNumber236">source</a></span></span>
     </span>
   </h3>
 
-  <div data-ice="importPath" class="import-path"><pre class="prettyprint"><code data-ice="importPathCode">import {create} from &apos;<span><a href="file/lib/actions.js.html#lineNumber226">pyrope/lib/actions.js</a></span>&apos;</code></pre></div>
+  <div data-ice="importPath" class="import-path"><pre class="prettyprint"><code data-ice="importPathCode">import {create} from &apos;<span><a href="file/lib/actions.js.html#lineNumber236">pyrope/lib/actions.js</a></span>&apos;</code></pre></div>
   
   
   <div data-ice="description"><p>Creates a new record in the specified table.</p>
 <p>It will create the record without any conditions.
 The following attributes are auto-generated: uuid, createdAt, updatedAt</p>
-<p>opts = {
+<pre><code><code class="source-code prettyprint">opts = {
   tableName: &apos;users&apos;,
   attributes: {
     username: &apos;someguy55&apos;,
     password: &apos;myPassword123&apos;
   }
-}</p>
-<p>return = {
+}
+
+return = {
   uuid: &apos;3f3e1091-8e43-41ca-a19a-881241370c31&apos; // String = &apos;S&apos;
   username: &apos;someguy55&apos;,                       // String = &apos;S&apos;
   password: &apos;myPassword123&apos;                    // String = &apos;S&apos;
   createdAt: 1470345881706,                    // Number = &apos;N&apos;
   updatedAt: 1470345881755                     // Number = &apos;N&apos;
-}</p>
-</div>
+}</code>
+</code></pre></div>
 
   
 
@@ -1084,21 +1112,21 @@ The following attributes are auto-generated: uuid, createdAt, updatedAt</p>
     <span class="right-info">
       
       
-      <span data-ice="source"><span><a href="file/lib/actions.js.html#lineNumber357">source</a></span></span>
+      <span data-ice="source"><span><a href="file/lib/actions.js.html#lineNumber371">source</a></span></span>
     </span>
   </h3>
 
-  <div data-ice="importPath" class="import-path"><pre class="prettyprint"><code data-ice="importPathCode">import {destroy} from &apos;<span><a href="file/lib/actions.js.html#lineNumber357">pyrope/lib/actions.js</a></span>&apos;</code></pre></div>
+  <div data-ice="importPath" class="import-path"><pre class="prettyprint"><code data-ice="importPathCode">import {destroy} from &apos;<span><a href="file/lib/actions.js.html#lineNumber371">pyrope/lib/actions.js</a></span>&apos;</code></pre></div>
   
   
   <div data-ice="description"><p>Deletes an item</p>
 <p>Previously checks using findByIndex() if the item exits.
  If it doesn&apos;t, returns false, otherwise returns the deleted item.</p>
-<p>opts = {
+<pre><code><code class="source-code prettyprint">opts = {
   tableName: String,
   index: Object,       // Index used to query the item.
-}</p>
-</div>
+}</code>
+</code></pre></div>
 
   
 
@@ -1143,11 +1171,11 @@ The following attributes are auto-generated: uuid, createdAt, updatedAt</p>
     <span class="right-info">
       
       
-      <span data-ice="source"><span><a href="file/lib/associations.js.html#lineNumber215">source</a></span></span>
+      <span data-ice="source"><span><a href="file/lib/associations.js.html#lineNumber218">source</a></span></span>
     </span>
   </h3>
 
-  <div data-ice="importPath" class="import-path"><pre class="prettyprint"><code data-ice="importPathCode">import {dissociate} from &apos;<span><a href="file/lib/associations.js.html#lineNumber215">pyrope/lib/associations.js</a></span>&apos;</code></pre></div>
+  <div data-ice="importPath" class="import-path"><pre class="prettyprint"><code data-ice="importPathCode">import {dissociate} from &apos;<span><a href="file/lib/associations.js.html#lineNumber218">pyrope/lib/associations.js</a></span>&apos;</code></pre></div>
   
   
   <div data-ice="description"><p>Dissociates two items if an association is found</p>
@@ -1209,28 +1237,28 @@ item[1].uuid can be an array of associations to remove.</p>
     <span class="right-info">
       
       
-      <span data-ice="source"><span><a href="file/lib/actions.js.html#lineNumber123">source</a></span></span>
+      <span data-ice="source"><span><a href="file/lib/actions.js.html#lineNumber129">source</a></span></span>
     </span>
   </h3>
 
-  <div data-ice="importPath" class="import-path"><pre class="prettyprint"><code data-ice="importPathCode">import {findByIndex} from &apos;<span><a href="file/lib/actions.js.html#lineNumber123">pyrope/lib/actions.js</a></span>&apos;</code></pre></div>
+  <div data-ice="importPath" class="import-path"><pre class="prettyprint"><code data-ice="importPathCode">import {findByIndex} from &apos;<span><a href="file/lib/actions.js.html#lineNumber129">pyrope/lib/actions.js</a></span>&apos;</code></pre></div>
   
   
   <div data-ice="description"><p>Queries a table and looks for items matching the specified index.</p>
 <p>The index mapping has the following structure:</p>
-<p>index = {
+<pre><code><code class="source-code prettyprint">index = {
   username: &apos;john&apos;
-}</p>
-<p>In order to find the table&apos;s index, the word &apos;Index&apos; is appended, resulting
+}</code>
+</code></pre><p>In order to find the table&apos;s index, the word &apos;Index&apos; is appended, resulting
 in this example in &apos;usernameIndex&apos;</p>
 <p>Every index has a &apos;createdAt&apos; range key. This is calculated and
 appended automatically before querying.</p>
-<p>opts = {
+<pre><code><code class="source-code prettyprint">opts = {
   tableName: String,
   index: {hash: value, [range: value]},
   ascending: Boolean
-}</p>
-</div>
+}</code>
+</code></pre></div>
 
   
 
@@ -1274,11 +1302,11 @@ appended automatically before querying.</p>
     <span class="right-info">
       
       
-      <span data-ice="source"><span><a href="file/lib/actions.js.html#lineNumber86">source</a></span></span>
+      <span data-ice="source"><span><a href="file/lib/actions.js.html#lineNumber88">source</a></span></span>
     </span>
   </h3>
 
-  <div data-ice="importPath" class="import-path"><pre class="prettyprint"><code data-ice="importPathCode">import {first} from &apos;<span><a href="file/lib/actions.js.html#lineNumber86">pyrope/lib/actions.js</a></span>&apos;</code></pre></div>
+  <div data-ice="importPath" class="import-path"><pre class="prettyprint"><code data-ice="importPathCode">import {first} from &apos;<span><a href="file/lib/actions.js.html#lineNumber88">pyrope/lib/actions.js</a></span>&apos;</code></pre></div>
   
   
   
@@ -1350,15 +1378,15 @@ appended automatically before querying.</p>
     
     
     
-    <span data-ice="name">getAssociations</span><span data-ice="signature">: <span>Promised Array</span>: <span>*</span></span>
+    <span data-ice="name">getAssociations</span><span data-ice="signature">: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a></span>: <span>*</span></span>
     <span class="right-info">
       
       
-      <span data-ice="source"><span><a href="file/lib/associations.js.html#lineNumber307">source</a></span></span>
+      <span data-ice="source"><span><a href="file/lib/associations.js.html#lineNumber315">source</a></span></span>
     </span>
   </h3>
 
-  <div data-ice="importPath" class="import-path"><pre class="prettyprint"><code data-ice="importPathCode">import {getAssociations} from &apos;<span><a href="file/lib/associations.js.html#lineNumber307">pyrope/lib/associations.js</a></span>&apos;</code></pre></div>
+  <div data-ice="importPath" class="import-path"><pre class="prettyprint"><code data-ice="importPathCode">import {getAssociations} from &apos;<span><a href="file/lib/associations.js.html#lineNumber315">pyrope/lib/associations.js</a></span>&apos;</code></pre></div>
   
   
   <div data-ice="description"><p> Returns the associations of the specified item with respect to another item</p>
@@ -1384,8 +1412,9 @@ appended automatically before querying.</p>
     <h4>Return:</h4>
     <table>
       <tr>
-        <td class="return-type" data-ice="returnType"><span>Promised Array</span></td>
-        
+        <td class="return-type" data-ice="returnType"><span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a></span></td>
+        <td class="return-desc" data-ice="returnDescription"><p>Array of uuids, [] if no assoc. found</p>
+</td>
       </tr>
     </table>
     <div data-ice="returnProperties">
@@ -1502,11 +1531,11 @@ If chaining is true, the resolved value is passed
     <span class="right-info">
       
       
-      <span data-ice="source"><span><a href="file/lib/actions.js.html#lineNumber92">source</a></span></span>
+      <span data-ice="source"><span><a href="file/lib/actions.js.html#lineNumber94">source</a></span></span>
     </span>
   </h3>
 
-  <div data-ice="importPath" class="import-path"><pre class="prettyprint"><code data-ice="importPathCode">import {last} from &apos;<span><a href="file/lib/actions.js.html#lineNumber92">pyrope/lib/actions.js</a></span>&apos;</code></pre></div>
+  <div data-ice="importPath" class="import-path"><pre class="prettyprint"><code data-ice="importPathCode">import {last} from &apos;<span><a href="file/lib/actions.js.html#lineNumber94">pyrope/lib/actions.js</a></span>&apos;</code></pre></div>
   
   
   
@@ -1582,11 +1611,11 @@ If chaining is true, the resolved value is passed
     <span class="right-info">
       
       
-      <span data-ice="source"><span><a href="file/lib/actions.js.html#lineNumber80">source</a></span></span>
+      <span data-ice="source"><span><a href="file/lib/actions.js.html#lineNumber82">source</a></span></span>
     </span>
   </h3>
 
-  <div data-ice="importPath" class="import-path"><pre class="prettyprint"><code data-ice="importPathCode">import {take} from &apos;<span><a href="file/lib/actions.js.html#lineNumber80">pyrope/lib/actions.js</a></span>&apos;</code></pre></div>
+  <div data-ice="importPath" class="import-path"><pre class="prettyprint"><code data-ice="importPathCode">import {take} from &apos;<span><a href="file/lib/actions.js.html#lineNumber82">pyrope/lib/actions.js</a></span>&apos;</code></pre></div>
   
   
   
@@ -1622,17 +1651,17 @@ If chaining is true, the resolved value is passed
     <span class="right-info">
       
       
-      <span data-ice="source"><span><a href="file/lib/actions.js.html#lineNumber271">source</a></span></span>
+      <span data-ice="source"><span><a href="file/lib/actions.js.html#lineNumber283">source</a></span></span>
     </span>
   </h3>
 
-  <div data-ice="importPath" class="import-path"><pre class="prettyprint"><code data-ice="importPathCode">import {update} from &apos;<span><a href="file/lib/actions.js.html#lineNumber271">pyrope/lib/actions.js</a></span>&apos;</code></pre></div>
+  <div data-ice="importPath" class="import-path"><pre class="prettyprint"><code data-ice="importPathCode">import {update} from &apos;<span><a href="file/lib/actions.js.html#lineNumber283">pyrope/lib/actions.js</a></span>&apos;</code></pre></div>
   
   
   <div data-ice="description"><p>Updates an item</p>
 <p>Previously checks using findByIndex() if the item exits.
  If it doesn&apos;t, returns false.</p>
-<p>opts = {
+<pre><code><code class="source-code prettyprint">opts = {
   tableName: String,
   index: Object,       // Index used to query the item.
   args: Object,        // Key-Value mapping of the arguments to change.
@@ -1641,8 +1670,8 @@ If chaining is true, the resolved value is passed
                                            change before the item is updated. Must return object of
                                            shape {attributeName: value}
                                            Attribute names may be also modified.
-}</p>
-</div>
+}</code>
+</code></pre></div>
 
   
 
@@ -1662,6 +1691,46 @@ If chaining is true, the resolved value is passed
     <div data-ice="returnProperties">
 </div>
   </div>
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+  
+</div>
+<div class="detail" data-ice="detail">
+  <h3 data-ice="anchor" id="static-variable-updateCounter">
+    <span class="access" data-ice="access">public</span>
+    
+    
+    
+    
+    <span data-ice="name">updateCounter</span><span data-ice="signature">: <span>*</span></span>
+    <span class="right-info">
+      
+      
+      <span data-ice="source"><span><a href="file/lib/counters.js.html#lineNumber9">source</a></span></span>
+    </span>
+  </h3>
+
+  <div data-ice="importPath" class="import-path"><pre class="prettyprint"><code data-ice="importPathCode">import {updateCounter} from &apos;<span><a href="file/lib/counters.js.html#lineNumber9">pyrope/lib/counters.js</a></span>&apos;</code></pre></div>
+  
+  
+  
+
+  
+
+  <div data-ice="properties">
+</div>
+
+  
 
   
 

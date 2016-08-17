@@ -6,7 +6,7 @@ import Promise from 'bluebird';
 
 export const dynaliteServer = Promise.promisifyAll(dynalite({path: './.dynamodb', createTableMs: 1, updateTableMs: 1, deleteTableMs: 1}));
 export const DYNALITE_PORT = 8000;
-export const TEST_TIMEOUT = 4000;
+export const TEST_TIMEOUT = 5000;
 
 export const dynaliteSetup = () => dynaliteServer.listenAsync(DYNALITE_PORT);
 

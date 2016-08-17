@@ -613,127 +613,126 @@ describe('DynamoDB associations', function() {
           expect(res.Items[5]).to.have.property('transaction', t6.uuid);
         })
       });
-  
-      describe('dissociate(o1).transaction(null)', () => {
-        it("make dissociaton", () => {
-          return pyrope.dissociate({
-            tableName: '_test_operations_transactions',
-            items: [
-              {
-                // index: 'operation',
-                // uuid: o1.uuid
-                index: {operation: o1.uuid}
-              },
-              {
-                index: {transaction: null},
-                // index: 'transaction',
-                // uuid: null
-              }
-            ]
-          }).then(res => {
-            expect(res).to.equal(true);
-          })
-        });
-    
-        it("post table check", () => {
-          return pyrope.all({
-            tableName: '_test_operations_transactions'
-        
-          }).then(res => {
-            // console.log(JSON.stringify(res, null, 2));
-        
-            expect(res).to.have.property('Items');
-            expect(res.Items).to.have.lengthOf(4);
-            expect(res.Items[0]).to.have.property('operation', o2.uuid);
-            expect(res.Items[0]).to.have.property('transaction', t5.uuid);
-            expect(res.Items[1]).to.have.property('operation', o2.uuid);
-            expect(res.Items[1]).to.have.property('transaction', t1.uuid);
-            expect(res.Items[2]).to.have.property('operation', o2.uuid);
-            expect(res.Items[2]).to.have.property('transaction', t2.uuid);
-            expect(res.Items[3]).to.have.property('operation', o2.uuid);
-            expect(res.Items[3]).to.have.property('transaction', t6.uuid);
-          })
-        });
-      });
-  
-      describe('dissociate(o1).transaction(t1)', () => {
-        it("make dissociaton", () => {
-          return pyrope.dissociate({
-            tableName: '_test_operations_transactions',
-            items: [
-              {
-                // index: 'operation',
-                // uuid: o2.uuid
-                index: {operation: o2.uuid}
-              },
-              {
-                // index: 'transaction',
-                // uuid: t1.uuid
-                index: {transaction: t1.uuid}
-              }
-            ]
-          }).then(res => {
-            expect(res).to.equal(true);
-          });
-        });
-    
-        it("post table check", () => {
-          return pyrope.all({
-            tableName: '_test_operations_transactions'
-        
-          }).then(res => {
-            // console.log(JSON.stringify(res, null, 2));
-        
-            expect(res).to.have.property('Items');
-            expect(res.Items).to.have.lengthOf(3);
-            expect(res.Items[0]).to.have.property('operation', o2.uuid);
-            expect(res.Items[0]).to.have.property('transaction', t5.uuid);
-            expect(res.Items[1]).to.have.property('operation', o2.uuid);
-            expect(res.Items[1]).to.have.property('transaction', t2.uuid);
-            expect(res.Items[2]).to.have.property('operation', o2.uuid);
-            expect(res.Items[2]).to.have.property('transaction', t6.uuid);
-          })
-        });
-      });
-  
-      describe('dissociate(o1).transaction([t5, 56)', () => {
-        it("make dissociaton", () => {
-          return pyrope.dissociate({
-            tableName: '_test_operations_transactions',
-            items: [
-              {
-                // index: 'operation',
-                // uuid: o2.uuid
-                index: {operation: o2.uuid}
-              },
-              {
-                // index: 'transaction',
-                // uuid: [t5.uuid, t6.uuid]
-                index: {transaction: [t5.uuid, t6.uuid]}
-              }
-            ]
-          }).then(res => {
-            expect(res).to.equal(true);
-          })
-        });
-    
-        it("post table check", () => {
-          return pyrope.all({
-            tableName: '_test_operations_transactions'
-        
-          }).then(res => {
-            // console.log(JSON.stringify(res, null, 2));
-        
-            expect(res).to.have.property('Items');
-            expect(res.Items).to.have.lengthOf(1);
-            expect(res.Items[0]).to.have.property('operation', o2.uuid);
-            expect(res.Items[0]).to.have.property('transaction', t2.uuid);
-          })
-        });
-      });
       
     });
-    
+  
+    describe('dissociate(o1).transaction(null)', () => {
+      it("make dissociaton", () => {
+        return pyrope.dissociate({
+          tableName: '_test_operations_transactions',
+          items: [
+            {
+              // index: 'operation',
+              // uuid: o1.uuid
+              index: {operation: o1.uuid}
+            },
+            {
+              index: {transaction: null},
+              // index: 'transaction',
+              // uuid: null
+            }
+          ]
+        }).then(res => {
+          expect(res).to.equal(true);
+        })
+      });
+  
+      it("post table check", () => {
+        return pyrope.all({
+          tableName: '_test_operations_transactions'
+      
+        }).then(res => {
+          // console.log(JSON.stringify(res, null, 2));
+      
+          expect(res).to.have.property('Items');
+          expect(res.Items).to.have.lengthOf(4);
+          expect(res.Items[0]).to.have.property('operation', o2.uuid);
+          expect(res.Items[0]).to.have.property('transaction', t5.uuid);
+          expect(res.Items[1]).to.have.property('operation', o2.uuid);
+          expect(res.Items[1]).to.have.property('transaction', t1.uuid);
+          expect(res.Items[2]).to.have.property('operation', o2.uuid);
+          expect(res.Items[2]).to.have.property('transaction', t2.uuid);
+          expect(res.Items[3]).to.have.property('operation', o2.uuid);
+          expect(res.Items[3]).to.have.property('transaction', t6.uuid);
+        })
+      });
+    });
+
+    describe('dissociate(o1).transaction(t1)', () => {
+      it("make dissociaton", () => {
+        return pyrope.dissociate({
+          tableName: '_test_operations_transactions',
+          items: [
+            {
+              // index: 'operation',
+              // uuid: o2.uuid
+              index: {operation: o2.uuid}
+            },
+            {
+              // index: 'transaction',
+              // uuid: t1.uuid
+              index: {transaction: t1.uuid}
+            }
+          ]
+        }).then(res => {
+          expect(res).to.equal(true);
+        });
+      });
+  
+      it("post table check", () => {
+        return pyrope.all({
+          tableName: '_test_operations_transactions'
+      
+        }).then(res => {
+          // console.log(JSON.stringify(res, null, 2));
+      
+          expect(res).to.have.property('Items');
+          expect(res.Items).to.have.lengthOf(3);
+          expect(res.Items[0]).to.have.property('operation', o2.uuid);
+          expect(res.Items[0]).to.have.property('transaction', t5.uuid);
+          expect(res.Items[1]).to.have.property('operation', o2.uuid);
+          expect(res.Items[1]).to.have.property('transaction', t2.uuid);
+          expect(res.Items[2]).to.have.property('operation', o2.uuid);
+          expect(res.Items[2]).to.have.property('transaction', t6.uuid);
+        })
+      });
+    });
+
+    describe('dissociate(o1).transaction([t5, 56)', () => {
+      it("make dissociaton", () => {
+        return pyrope.dissociate({
+          tableName: '_test_operations_transactions',
+          items: [
+            {
+              // index: 'operation',
+              // uuid: o2.uuid
+              index: {operation: o2.uuid}
+            },
+            {
+              // index: 'transaction',
+              // uuid: [t5.uuid, t6.uuid]
+              index: {transaction: [t5.uuid, t6.uuid]}
+            }
+          ]
+        }).then(res => {
+          expect(res).to.equal(true);
+        })
+      });
+  
+      it("post table check", () => {
+        return pyrope.all({
+          tableName: '_test_operations_transactions'
+      
+        }).then(res => {
+          // console.log(JSON.stringify(res, null, 2));
+      
+          expect(res).to.have.property('Items');
+          expect(res.Items).to.have.lengthOf(1);
+          expect(res.Items[0]).to.have.property('operation', o2.uuid);
+          expect(res.Items[0]).to.have.property('transaction', t2.uuid);
+        })
+      });
+    });
   });
   
   describe("N:N associate()", function() {

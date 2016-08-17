@@ -10,7 +10,7 @@
     "access": null,
     "description": null,
     "lineNumber": 1,
-    "content": "\nimport { ddbClient } from './core';\nimport { isNumber, isArray, isBoolean, isString, pluck, isObject, isFunction } from 'underscore';\nimport { buildUpdateExpression, genTableDigest } from './utils';\nimport { increaseCounter, decreaseCounter } from './counters';\nimport { v4 } from 'uuid';\n\nconst COUNTERS_TABLE_NAME = 'table_counters';\n\n/**\n * Returns an array with the mappings for every record in the table.\n *\n * Results are returned sorted ascending. You can specify a limit  and a cursor\n * to do batch fetching.\n *\n * opts = {\n *  tableName: String,     // The name of the table\n *  ascending: Boolean,    // Should the results be returned in a ascending manner?\n *  limit: Integer,        // The amount of items to fetch\n *  cursor: String         // A base64 encoded map of the key containing {uuid: String, createdAt: Number, _table: String}\n * }\n *\n *\n * @param {object} opts Options mapping.\n * @return {array} An array with the QUERY result, has the structure {Items: [], Count: 0, Cursor: ''}\n *\n * @TODO: Select specific attributes to return.\n */\nexport const all = (opts) => new Promise((resolve, reject) => {\n  if(opts === undefined) return reject(`all(): 'opts' is not defined.`);\n  \n  let { tableName, ascending = true, limit = 0, cursor } = opts;\n  \n  if(tableName === undefined || !isString(tableName)) return reject(`all(): 'tableName' is undefined or not a string.`);\n  if(ascending && !isBoolean(ascending)) return reject(`all(): 'ascending' is not boolean.`);\n  if(limit && !isNumber(limit)) return reject(`all(): 'limit' is not a number.`);\n  if(cursor && !isString(cursor)) return reject(`all(): 'cursor' is not a string.`);\n  \n  let params = {\n    TableName: tableName,\n    IndexName: '_tableIndex',\n    KeyConditionExpression: `#t = :t`,\n    ExpressionAttributeNames: {\n      '#t': '_table'\n    },\n    ExpressionAttributeValues: {\n      ':t': tableName\n    },\n    ScanIndexForward: ascending,\n    Select: 'ALL_ATTRIBUTES'\n  };\n  \n  if(limit && isNumber(limit) && limit > 0) {\n    params = {...params, Limit: limit};\n  }\n  \n  if(cursor) {\n    let startKey;\n    \n    try {\n      startKey = JSON.parse(new Buffer(cursor, 'base64').toString('ascii'));\n    } catch(err) {\n      return reject(`all(): Error parsing cursor: ${err}`);\n    }\n    \n    params = {...params, ExclusiveStartKey: startKey};\n  }\n  \n  ddbClient('query', params)\n    .then(res => {\n      if(res.LastEvaluatedKey) {\n        res.Cursor = new Buffer(JSON.stringify(res.LastEvaluatedKey)).toString('base64');\n      }\n  \n      resolve(res);\n    })\n    .catch(err => reject(`all(): ${err}`));\n});\n\nexport const take = (opts) => {\n  let { tableName, limit = 1, cursor, ascending = true } = opts;\n  \n  return all({tableName, limit, cursor, ascending});\n};\n\nexport const first = (opts) => {\n  let { tableName, limit = 1, cursor } = opts;\n  \n  return take({tableName, limit, cursor});\n};\n\nexport const last = (opts) => {\n  let { tableName, limit = 1, cursor } = opts;\n  \n  return take({tableName, limit, ascending: false, cursor});\n};\n\n/**\n * Queries a table and looks for items matching the specified index.\n *\n * The index mapping has the following structure:\n *\n * index = {\n *   username: 'john'\n * }\n *\n * In order to find the table's index, the word 'Index' is appended, resulting\n * in this example in 'usernameIndex'\n *\n * Every index has a 'createdAt' range key. This is calculated and\n * appended automatically before querying.\n *\n * opts = {\n *   tableName: String,\n *   index: {hash: value, [range: value]},\n *   ascending: Boolean\n * }\n *\n * @param {object} opts Options mapping.\n * @return {Array|Boolean} Array when there are multiple matches, false when not found\n *\n */\nexport const findByIndex = (opts) => new Promise((resolve, reject) => {\n  if(opts === undefined) return reject(`findByIndex(): 'opts' is not defined.`);\n  \n  let { tableName, index, ascending = true } = opts;\n  \n  if(tableName === undefined || !isString(tableName)) return reject(`findByIndex(): 'tableName' is undefined or not a string.`);\n  if(index === undefined || !isObject(index)) return reject(`findByIndex(): 'index' is undefined or not an object.`);\n  if(Object.keys(index).length > 2) return reject(`findByIndex(): 'index' should have at most 2 key-value pairs.`);\n  if(Object.keys(index).length < 1) return reject(`findByIndex(): 'index' should have at least 1 key-value pair.`);\n  \n  const indexKey = Object.keys(index)[0];\n  const indexValue = index[indexKey];\n  const indexName = Object.keys(index)[0] + 'Index';\n  \n  const params = {\n    TableName: tableName,\n    IndexName: indexName,\n    KeyConditionExpression: `#${indexKey} = :${indexKey}`,\n    ExpressionAttributeNames: {\n      [`#${indexKey}`]: indexKey,\n    },\n    ExpressionAttributeValues: {\n      [`:${indexKey}`]: indexValue\n    },\n    ScanIndexForward: ascending,\n    Select: 'ALL_ATTRIBUTES'\n  };\n  \n  ddbClient('query', params)\n    .then(res => {\n      if(res.Items.length === 0) {\n        resolve(false); // not found\n      } else {\n        resolve(res.Items);\n      }\n    })\n    .catch(err => reject(`findByIndex(): ${err}`));\n});\n\n/**\n * Returns the table's item count\n *\n * opts = {\n *   tableName: String\n * }\n *\n * @param {Object} opts The options object.\n * @return {Number} The item count.\n */\nexport const count = ( opts ) => new Promise((resolve, reject) => {\n  if(opts === undefined) return reject(`count(): 'opts' is not defined.`);\n  \n  const { tableName } = opts;\n  \n  if(tableName === undefined || !isString(tableName)) return reject(`count(): 'tableName' is undefined or not a string.`);\n  \n  const counterTableName = process.env.NODE_ENV === 'test' ? '_test_' + COUNTERS_TABLE_NAME : COUNTERS_TABLE_NAME;\n  \n  let count = 0;\n   \n  findByIndex({\n    tableName: counterTableName,\n    index: {tableDigest: genTableDigest(tableName)}\n  })\n    .then(res => {\n      if(res === false) {\n        resolve(0);\n      } else {\n        resolve(res[0].count);\n      }\n    })\n    .catch(err => reject(`count(): ${err}`));\n});\n\n/**\n * Creates a new record in the specified table.\n *\n * It will create the record without any conditions.\n * The following attributes are auto-generated: uuid, createdAt, updatedAt\n *\n * opts = {\n *   tableName: 'users',\n *   attributes: {\n *     username: 'someguy55',\n *     password: 'myPassword123'\n *   }\n * }\n *\n * return = {\n *   uuid: '3f3e1091-8e43-41ca-a19a-881241370c31' // String = 'S'\n *   username: 'someguy55',                       // String = 'S'\n *   password: 'myPassword123'                    // String = 'S'\n *   createdAt: 1470345881706,                    // Number = 'N'\n *   updatedAt: 1470345881755                     // Number = 'N'\n * }\n *\n * @param {object} opts Options mapping.\n * @return {object} The attributes of the newly created record, rejection on error\n * @todo: Handle unprocessedItems\n * @todo: Handle failed increaseCounter()\n * @todo: let uuid, createdAt, updatedAt to be cofigurable ?\n *\n */\nexport const create = (opts) => new Promise((resolve, reject) => {\n  // todo: Sanitize variables (convert empty strings to null)\n  if(opts === undefined) return reject(`create(): 'opts' is not defined.`);\n  \n  let { tableName, attributes } = opts;\n  \n  if(tableName === undefined || !isString(tableName)) return reject(`create(): 'tableName' is undefined or not a string.`);\n  if(attributes === undefined || !isObject(attributes)) return reject(`create(): 'attributes' is undefined or not an object.`);\n  \n  attributes.uuid = v4();\n  attributes.createdAt = Number(new Date().getTime());\n  attributes.updatedAt = Number(new Date().getTime());\n  attributes._table = tableName;\n  \n  ddbClient('put', {\n    TableName: tableName,\n    Item: attributes\n  })\n    .then(() => increaseCounter({tableName}))\n    .then(() => resolve(attributes))\n    .catch(err => reject(`create(): ${err}`));\n});\n\n/**\n * Updates an item\n *\n * Previously checks using findByIndex() if the item exits.\n *  If it doesn't, returns false.\n *\n * opts = {\n *   tableName: String,\n *   index: Object,       // Index used to query the item.\n *   args: Object,        // Key-Value mapping of the arguments to change.\n *   beforeHook: (attrName, args) Function // Callback function for every attribute.\n *                                            Used to modify the key-value mapping of the attributes to\n *                                            change before the item is updated. Must return object of\n *                                            shape {attributeName: value}\n *                                            Attribute names may be also modified.\n * }\n *\n * @param {Object} opts Options mapping\n * @return {Object|Boolean} A key-value map with the updated attributes or false if not found.\n * @todo: Handle unprocessedItems\n *\n */\nexport const update = (opts) => new Promise((resolve, reject) => {\n  if(opts === undefined) return reject(`update(): 'opts' is not defined.`);\n  \n  let { tableName, index, attributes, beforeHook } = opts;\n  \n  if(tableName === undefined || !isString(tableName)) return reject(`update(): 'tableName' is undefined or not a string.`);\n  if(index === undefined || !isObject(index)) return reject(`update(): 'index' is undefined or not an object.`);\n  if(Object.keys(index).length < 1 || Object.keys(index).length > 2) return reject(`update(): 'index' should have at least 1 item and at most 2.`);\n  if(attributes === undefined || !isObject(attributes)) return reject(`update(): 'attributes' is undefined or not an object.`);\n  if(beforeHook && !isFunction(beforeHook)) return reject(`update(): 'beforeHook' is not a function.`);\n  \n  findByIndex({\n    tableName,\n    index\n  })\n    .then(item => {\n      if(item === false) {\n        return Promise.resolve(false);\n      } else if(isArray(item) && item.length > 1) {\n        return Promise.reject(`Cannot update an array of items.`);\n      } else {\n        return Promise.resolve(item);\n      }\n    })\n    .then(item => {\n      if(isObject(item)) {\n        _update({...opts, index: {uuid: item[0].uuid, createdAt: item[0].createdAt}})\n          .then(item => resolve(item.Attributes))\n      } else {\n        resolve(false);\n      }\n    })\n    .catch(err => reject(`update(): ${err}`));\n});\n\n// Helper function that makes the actual update. This does not check if the item previously exists.\nconst _update = (opts) => new Promise((resolve, reject) => {\n  if(opts === undefined) reject(`_update(): 'opts' is not defined.`);\n  \n  let { tableName, index, attributes, beforeHook } = opts;\n  \n  if(tableName === undefined || !isString(tableName)) reject(`_update(): 'tableName' is undefined or not a string.`);\n  if(index === undefined || !isObject(index)) reject(`_update(): 'index' is undefined or not an object.`);\n  if(Object.keys(index).length < 1 || Object.keys(index).length > 2) reject(`_update(): 'index' should have at least 1 item and at most 2.`);\n  if(attributes === undefined || !isObject(attributes)) reject(`_update(): 'attributes' is undefined or not an object.`);\n  if(beforeHook && !isFunction(beforeHook)) reject(`_update(): 'beforeHook' is not a function.`);\n  \n  const hashKey = Object.keys(index)[0];\n  const hashValue = index[hashKey];\n  const rangeKey = Object.keys(index)[1];\n  const rangeValue = index[rangeKey];\n  \n  // Mock beforeHook returning all argument {key:value} untouched\n  if(!beforeHook) beforeHook = (attrName) => ({[attrName]: attributes[attrName]});\n  \n  buildUpdateExpression(attributes, beforeHook) // Build expression\n    .then(expression => ({ // Build params\n      TableName: tableName,\n      Key: {\n        [hashKey]: hashValue,\n        [rangeKey]: rangeValue\n      },\n      ReturnValues: 'ALL_NEW',\n      ...expression\n    }))\n    .then(params => ddbClient('update', params)) // DynamoDB Update\n    .then(res => resolve(res)) // Resolve results\n    .catch(err => reject(`_update(): ${err}`));\n});\n\n/**\n * Deletes an item\n *\n * Previously checks using findByIndex() if the item exits.\n *  If it doesn't, returns false, otherwise returns the deleted item.\n *\n * opts = {\n *   tableName: String,\n *   index: Object,       // Index used to query the item.\n * }\n *\n * @param {Object} opts Options mapping\n * @return {Object|Boolean} A key-value map with the deleted item's attributes, false if not found\n * @todo: Handle unprocessedItems\n *\n */\nexport const destroy = (opts) => new Promise((resolve, reject) => {\n  if(opts === undefined) return reject(`destroy(): 'opts' is not defined.`);\n  \n  let { tableName, index } = opts;\n  \n  if(tableName === undefined || !isString(tableName)) return reject(`destroy(): 'tableName' is undefined or not a string.`);\n  if(index === undefined || !isObject(index)) return reject(`destroy(): 'index' is undefined or not an object.`);\n  if(Object.keys(index).length < 1 || Object.keys(index).length > 2) return reject(`destroy(): 'index' should have at least 1 item and at most 2.`);\n  \n  findByIndex({\n    tableName,\n    index\n  })\n    .then(item => {\n      if(item === false) {\n        return Promise.resolve(false);\n      } else {\n        const deleteRequests = item.map(item => ({DeleteRequest: {Key: {uuid: item.uuid, createdAt: item.createdAt}}}));\n        \n        const params = {\n          RequestItems: {\n            [tableName]: deleteRequests\n          }\n        };\n        \n        return ddbClient('batchWrite', params)\n          .then(res => {\n            if(res.UnprocessedItems && Object.keys(res.UnprocessedItems).length > 0) return Promise.reject('destroy() batch: Warning, unprocessed items.' + JSON.stringify(res.UnprocessedItems));\n  \n            return Promise.resolve(item[0]);\n          });\n      }\n    })\n    .then(item => {\n      if(isObject(item)) {\n        return decreaseCounter(opts).then(() => item);\n      } else {\n        return false;\n      }\n    })\n    .then((res) => resolve(res))\n    .catch(err => reject(`destroy(): ${err}`))\n});"
+    "content": "\nimport { ddbClient } from './core';\nimport { isNumber, isArray, isBoolean, isString, pluck, isObject, isFunction } from 'underscore';\nimport { buildUpdateExpression, genTableDigest } from './utils';\nimport { increaseCounter, decreaseCounter } from './counters';\nimport { v4 } from 'uuid';\n\nconst COUNTERS_TABLE_NAME = 'table_counters';\n\n/**\n * Returns an array with the mappings for every record in the table.\n *\n * Results are returned sorted ascending. You can specify a limit  and a cursor\n * to do batch fetching.\n *\n * ```\n * opts = {\n *  tableName: String,     // The name of the table\n *  ascending: Boolean,    // Should the results be returned in a ascending manner?\n *  limit: Integer,        // The amount of items to fetch\n *  cursor: String         // A base64 encoded map of the key containing {uuid: String, createdAt: Number, _table: String}\n * }\n * ```\n *\n *\n * @param {object} opts Options mapping.\n * @return {array} An array with the QUERY result, has the structure {Items: [], Count: 0, Cursor: ''}\n *\n * @TODO: Select specific attributes to return.\n */\nexport const all = (opts) => new Promise((resolve, reject) => {\n  if(opts === undefined) return reject(`all(): 'opts' is not defined.`);\n  \n  let { tableName, ascending = true, limit = 0, cursor } = opts;\n  \n  if(tableName === undefined || !isString(tableName)) return reject(`all(): 'tableName' is undefined or not a string.`);\n  if(ascending && !isBoolean(ascending)) return reject(`all(): 'ascending' is not boolean.`);\n  if(limit && !isNumber(limit)) return reject(`all(): 'limit' is not a number.`);\n  if(cursor && !isString(cursor)) return reject(`all(): 'cursor' is not a string.`);\n  \n  let params = {\n    TableName: tableName,\n    IndexName: '_tableIndex',\n    KeyConditionExpression: `#t = :t`,\n    ExpressionAttributeNames: {\n      '#t': '_table'\n    },\n    ExpressionAttributeValues: {\n      ':t': tableName\n    },\n    ScanIndexForward: ascending,\n    Select: 'ALL_ATTRIBUTES'\n  };\n  \n  if(limit && isNumber(limit) && limit > 0) {\n    params = {...params, Limit: limit};\n  }\n  \n  if(cursor) {\n    let startKey;\n    \n    try {\n      startKey = JSON.parse(new Buffer(cursor, 'base64').toString('ascii'));\n    } catch(err) {\n      return reject(`all(): Error parsing cursor: ${err}`);\n    }\n    \n    params = {...params, ExclusiveStartKey: startKey};\n  }\n  \n  ddbClient('query', params)\n    .then(res => {\n      if(res.LastEvaluatedKey) {\n        res.Cursor = new Buffer(JSON.stringify(res.LastEvaluatedKey)).toString('base64');\n      }\n  \n      resolve(res);\n    })\n    .catch(err => reject(`all(): ${err}`));\n});\n\nexport const take = (opts) => {\n  let { tableName, limit = 1, cursor, ascending = true } = opts;\n  \n  return all({tableName, limit, cursor, ascending});\n};\n\nexport const first = (opts) => {\n  let { tableName, limit = 1, cursor } = opts;\n  \n  return take({tableName, limit, cursor});\n};\n\nexport const last = (opts) => {\n  let { tableName, limit = 1, cursor } = opts;\n  \n  return take({tableName, limit, ascending: false, cursor});\n};\n\n/**\n * Queries a table and looks for items matching the specified index.\n *\n * The index mapping has the following structure:\n *\n * ```\n * index = {\n *   username: 'john'\n * }\n * ```\n *\n * In order to find the table's index, the word 'Index' is appended, resulting\n * in this example in 'usernameIndex'\n *\n * Every index has a 'createdAt' range key. This is calculated and\n * appended automatically before querying.\n *\n * ```\n * opts = {\n *   tableName: String,\n *   index: {hash: value, [range: value]},\n *   ascending: Boolean\n * }\n * ```\n *\n * @param {object} opts Options mapping.\n * @return {Array|Boolean} Array when there are multiple matches, false when not found\n *\n */\nexport const findByIndex = (opts) => new Promise((resolve, reject) => {\n  if(opts === undefined) return reject(`findByIndex(): 'opts' is not defined.`);\n  \n  let { tableName, index, ascending = true } = opts;\n  \n  if(tableName === undefined || !isString(tableName)) return reject(`findByIndex(): 'tableName' is undefined or not a string.`);\n  if(index === undefined || !isObject(index)) return reject(`findByIndex(): 'index' is undefined or not an object.`);\n  if(Object.keys(index).length > 2) return reject(`findByIndex(): 'index' should have at most 2 key-value pairs.`);\n  if(Object.keys(index).length < 1) return reject(`findByIndex(): 'index' should have at least 1 key-value pair.`);\n  \n  const indexKey = Object.keys(index)[0];\n  const indexValue = index[indexKey];\n  const indexName = Object.keys(index)[0] + 'Index';\n  \n  const params = {\n    TableName: tableName,\n    IndexName: indexName,\n    KeyConditionExpression: `#${indexKey} = :${indexKey}`,\n    ExpressionAttributeNames: {\n      [`#${indexKey}`]: indexKey,\n    },\n    ExpressionAttributeValues: {\n      [`:${indexKey}`]: indexValue\n    },\n    ScanIndexForward: ascending,\n    Select: 'ALL_ATTRIBUTES'\n  };\n  \n  ddbClient('query', params)\n    .then(res => {\n      if(res.Items.length === 0) {\n        resolve(false); // not found\n      } else {\n        resolve(res.Items);\n      }\n    })\n    .catch(err => reject(`findByIndex(): ${err}`));\n});\n\n/**\n * Returns the table's item count\n *\n * ```\n * opts = {\n *   tableName: String\n * }\n * ```\n *\n * @param {Object} opts The options object.\n * @return {Number} The item count.\n */\nexport const count = ( opts ) => new Promise((resolve, reject) => {\n  if(opts === undefined) return reject(`count(): 'opts' is not defined.`);\n  \n  const { tableName } = opts;\n  \n  if(tableName === undefined || !isString(tableName)) return reject(`count(): 'tableName' is undefined or not a string.`);\n  \n  const counterTableName = process.env.NODE_ENV === 'test' ? '_test_' + COUNTERS_TABLE_NAME : COUNTERS_TABLE_NAME;\n  \n  let count = 0;\n   \n  findByIndex({\n    tableName: counterTableName,\n    index: {tableDigest: genTableDigest(tableName)}\n  })\n    .then(res => {\n      if(res === false) {\n        resolve(0);\n      } else {\n        resolve(res[0].count);\n      }\n    })\n    .catch(err => reject(`count(): ${err}`));\n});\n\n/**\n * Creates a new record in the specified table.\n *\n * It will create the record without any conditions.\n * The following attributes are auto-generated: uuid, createdAt, updatedAt\n *\n * ```\n * opts = {\n *   tableName: 'users',\n *   attributes: {\n *     username: 'someguy55',\n *     password: 'myPassword123'\n *   }\n * }\n *\n * return = {\n *   uuid: '3f3e1091-8e43-41ca-a19a-881241370c31' // String = 'S'\n *   username: 'someguy55',                       // String = 'S'\n *   password: 'myPassword123'                    // String = 'S'\n *   createdAt: 1470345881706,                    // Number = 'N'\n *   updatedAt: 1470345881755                     // Number = 'N'\n * }\n * ```\n *\n * @param {object} opts Options mapping.\n * @return {object} The attributes of the newly created record, rejection on error\n * @todo: Handle unprocessedItems\n * @todo: Handle failed increaseCounter()\n * @todo: let uuid, createdAt, updatedAt to be cofigurable ?\n *\n */\nexport const create = (opts) => new Promise((resolve, reject) => {\n  // todo: Sanitize variables (convert empty strings to null)\n  if(opts === undefined) return reject(`create(): 'opts' is not defined.`);\n  \n  let { tableName, attributes } = opts;\n  \n  if(tableName === undefined || !isString(tableName)) return reject(`create(): 'tableName' is undefined or not a string.`);\n  if(attributes === undefined || !isObject(attributes)) return reject(`create(): 'attributes' is undefined or not an object.`);\n  \n  attributes.uuid = v4();\n  attributes.createdAt = Number(new Date().getTime());\n  attributes.updatedAt = Number(new Date().getTime());\n  attributes._table = tableName;\n  \n  ddbClient('put', {\n    TableName: tableName,\n    Item: attributes\n  })\n    .then(() => increaseCounter({tableName}))\n    .then(() => resolve(attributes))\n    .catch(err => reject(`create(): ${err}`));\n});\n\n/**\n * Updates an item\n *\n * Previously checks using findByIndex() if the item exits.\n *  If it doesn't, returns false.\n *\n * ```\n * opts = {\n *   tableName: String,\n *   index: Object,       // Index used to query the item.\n *   args: Object,        // Key-Value mapping of the arguments to change.\n *   beforeHook: (attrName, args) Function // Callback function for every attribute.\n *                                            Used to modify the key-value mapping of the attributes to\n *                                            change before the item is updated. Must return object of\n *                                            shape {attributeName: value}\n *                                            Attribute names may be also modified.\n * }\n * ```\n *\n * @param {Object} opts Options mapping\n * @return {Object|Boolean} A key-value map with the updated attributes or false if not found.\n * @todo: Handle unprocessedItems\n *\n */\nexport const update = (opts) => new Promise((resolve, reject) => {\n  if(opts === undefined) return reject(`update(): 'opts' is not defined.`);\n  \n  let { tableName, index, attributes, beforeHook } = opts;\n  \n  if(tableName === undefined || !isString(tableName)) return reject(`update(): 'tableName' is undefined or not a string.`);\n  if(index === undefined || !isObject(index)) return reject(`update(): 'index' is undefined or not an object.`);\n  if(Object.keys(index).length < 1 || Object.keys(index).length > 2) return reject(`update(): 'index' should have at least 1 item and at most 2.`);\n  if(attributes === undefined || !isObject(attributes)) return reject(`update(): 'attributes' is undefined or not an object.`);\n  if(beforeHook && !isFunction(beforeHook)) return reject(`update(): 'beforeHook' is not a function.`);\n  \n  findByIndex({\n    tableName,\n    index\n  })\n    .then(item => {\n      if(item === false) {\n        return Promise.resolve(false);\n      } else if(isArray(item) && item.length > 1) {\n        return Promise.reject(`Cannot update an array of items.`);\n      } else {\n        return Promise.resolve(item);\n      }\n    })\n    .then(item => {\n      if(isObject(item)) {\n        _update({...opts, index: {uuid: item[0].uuid, createdAt: item[0].createdAt}})\n          .then(item => resolve(item.Attributes))\n      } else {\n        resolve(false);\n      }\n    })\n    .catch(err => reject(`update(): ${err}`));\n});\n\n// Helper function that makes the actual update. This does not check if the item previously exists.\nconst _update = (opts) => new Promise((resolve, reject) => {\n  if(opts === undefined) reject(`_update(): 'opts' is not defined.`);\n  \n  let { tableName, index, attributes, beforeHook } = opts;\n  \n  if(tableName === undefined || !isString(tableName)) reject(`_update(): 'tableName' is undefined or not a string.`);\n  if(index === undefined || !isObject(index)) reject(`_update(): 'index' is undefined or not an object.`);\n  if(Object.keys(index).length < 1 || Object.keys(index).length > 2) reject(`_update(): 'index' should have at least 1 item and at most 2.`);\n  if(attributes === undefined || !isObject(attributes)) reject(`_update(): 'attributes' is undefined or not an object.`);\n  if(beforeHook && !isFunction(beforeHook)) reject(`_update(): 'beforeHook' is not a function.`);\n  \n  const hashKey = Object.keys(index)[0];\n  const hashValue = index[hashKey];\n  const rangeKey = Object.keys(index)[1];\n  const rangeValue = index[rangeKey];\n  \n  // Mock beforeHook returning all argument {key:value} untouched\n  if(!beforeHook) beforeHook = (attrName) => ({[attrName]: attributes[attrName]});\n  \n  buildUpdateExpression(attributes, beforeHook) // Build expression\n    .then(expression => ({ // Build params\n      TableName: tableName,\n      Key: {\n        [hashKey]: hashValue,\n        [rangeKey]: rangeValue\n      },\n      ReturnValues: 'ALL_NEW',\n      ...expression\n    }))\n    .then(params => ddbClient('update', params)) // DynamoDB Update\n    .then(res => resolve(res)) // Resolve results\n    .catch(err => reject(`_update(): ${err}`));\n});\n\n/**\n * Deletes an item\n *\n * Previously checks using findByIndex() if the item exits.\n *  If it doesn't, returns false, otherwise returns the deleted item.\n *\n * ```\n * opts = {\n *   tableName: String,\n *   index: Object,       // Index used to query the item.\n * }\n * ```\n *\n * @param {Object} opts Options mapping\n * @return {Object|Boolean} A key-value map with the deleted item's attributes, false if not found\n * @todo: Handle unprocessedItems\n *\n */\nexport const destroy = (opts) => new Promise((resolve, reject) => {\n  if(opts === undefined) return reject(`destroy(): 'opts' is not defined.`);\n  \n  let { tableName, index } = opts;\n  \n  if(tableName === undefined || !isString(tableName)) return reject(`destroy(): 'tableName' is undefined or not a string.`);\n  if(index === undefined || !isObject(index)) return reject(`destroy(): 'index' is undefined or not an object.`);\n  if(Object.keys(index).length < 1 || Object.keys(index).length > 2) return reject(`destroy(): 'index' should have at least 1 item and at most 2.`);\n  \n  findByIndex({\n    tableName,\n    index\n  })\n    .then(item => {\n      if(item === false) {\n        return Promise.resolve(false);\n      } else {\n        const deleteRequests = item.map(item => ({DeleteRequest: {Key: {uuid: item.uuid, createdAt: item.createdAt}}}));\n        \n        const params = {\n          RequestItems: {\n            [tableName]: deleteRequests\n          }\n        };\n        \n        return ddbClient('batchWrite', params)\n          .then(res => {\n            if(res.UnprocessedItems && Object.keys(res.UnprocessedItems).length > 0) return Promise.reject('destroy() batch: Warning, unprocessed items.' + JSON.stringify(res.UnprocessedItems));\n  \n            return Promise.resolve(item[0]);\n          });\n      }\n    })\n    .then(item => {\n      if(isObject(item)) {\n        return decreaseCounter(opts).then(() => item);\n      } else {\n        return false;\n      }\n    })\n    .then((res) => resolve(res))\n    .catch(err => reject(`destroy(): ${err}`))\n});"
   },
   {
     "__docId__": 1,
@@ -45,8 +45,8 @@
     "export": true,
     "importPath": "pyrope/lib/actions.js",
     "importStyle": "{all}",
-    "description": "Returns an array with the mappings for every record in the table.\n\nResults are returned sorted ascending. You can specify a limit  and a cursor\nto do batch fetching.\n\nopts = {\n tableName: String,     // The name of the table\n ascending: Boolean,    // Should the results be returned in a ascending manner?\n limit: Integer,        // The amount of items to fetch\n cursor: String         // A base64 encoded map of the key containing {uuid: String, createdAt: Number, _table: String}\n}",
-    "lineNumber": 29,
+    "description": "Returns an array with the mappings for every record in the table.\n\nResults are returned sorted ascending. You can specify a limit  and a cursor\nto do batch fetching.\n\n```\nopts = {\n tableName: String,     // The name of the table\n ascending: Boolean,    // Should the results be returned in a ascending manner?\n limit: Integer,        // The amount of items to fetch\n cursor: String         // A base64 encoded map of the key containing {uuid: String, createdAt: Number, _table: String}\n}\n```",
+    "lineNumber": 31,
     "params": [
       {
         "nullable": null,
@@ -86,7 +86,7 @@
     "importPath": "pyrope/lib/actions.js",
     "importStyle": "{take}",
     "description": null,
-    "lineNumber": 80,
+    "lineNumber": 82,
     "undocument": true,
     "type": {
       "types": [
@@ -107,7 +107,7 @@
     "importPath": "pyrope/lib/actions.js",
     "importStyle": "{first}",
     "description": null,
-    "lineNumber": 86,
+    "lineNumber": 88,
     "undocument": true,
     "type": {
       "types": [
@@ -128,7 +128,7 @@
     "importPath": "pyrope/lib/actions.js",
     "importStyle": "{last}",
     "description": null,
-    "lineNumber": 92,
+    "lineNumber": 94,
     "undocument": true,
     "type": {
       "types": [
@@ -148,8 +148,8 @@
     "export": true,
     "importPath": "pyrope/lib/actions.js",
     "importStyle": "{findByIndex}",
-    "description": "Queries a table and looks for items matching the specified index.\n\nThe index mapping has the following structure:\n\nindex = {\n  username: 'john'\n}\n\nIn order to find the table's index, the word 'Index' is appended, resulting\nin this example in 'usernameIndex'\n\nEvery index has a 'createdAt' range key. This is calculated and\nappended automatically before querying.\n\nopts = {\n  tableName: String,\n  index: {hash: value, [range: value]},\n  ascending: Boolean\n}",
-    "lineNumber": 123,
+    "description": "Queries a table and looks for items matching the specified index.\n\nThe index mapping has the following structure:\n\n```\nindex = {\n  username: 'john'\n}\n```\n\nIn order to find the table's index, the word 'Index' is appended, resulting\nin this example in 'usernameIndex'\n\nEvery index has a 'createdAt' range key. This is calculated and\nappended automatically before querying.\n\n```\nopts = {\n  tableName: String,\n  index: {hash: value, [range: value]},\n  ascending: Boolean\n}\n```",
+    "lineNumber": 129,
     "params": [
       {
         "nullable": null,
@@ -189,8 +189,8 @@
     "export": true,
     "importPath": "pyrope/lib/actions.js",
     "importStyle": "{count}",
-    "description": "Returns the table's item count\n\nopts = {\n  tableName: String\n}",
-    "lineNumber": 172,
+    "description": "Returns the table's item count\n\n```\nopts = {\n  tableName: String\n}\n```",
+    "lineNumber": 180,
     "params": [
       {
         "nullable": null,
@@ -229,8 +229,8 @@
     "export": true,
     "importPath": "pyrope/lib/actions.js",
     "importStyle": "{create}",
-    "description": "Creates a new record in the specified table.\n\nIt will create the record without any conditions.\nThe following attributes are auto-generated: uuid, createdAt, updatedAt\n\nopts = {\n  tableName: 'users',\n  attributes: {\n    username: 'someguy55',\n    password: 'myPassword123'\n  }\n}\n\nreturn = {\n  uuid: '3f3e1091-8e43-41ca-a19a-881241370c31' // String = 'S'\n  username: 'someguy55',                       // String = 'S'\n  password: 'myPassword123'                    // String = 'S'\n  createdAt: 1470345881706,                    // Number = 'N'\n  updatedAt: 1470345881755                     // Number = 'N'\n}",
-    "lineNumber": 226,
+    "description": "Creates a new record in the specified table.\n\nIt will create the record without any conditions.\nThe following attributes are auto-generated: uuid, createdAt, updatedAt\n\n```\nopts = {\n  tableName: 'users',\n  attributes: {\n    username: 'someguy55',\n    password: 'myPassword123'\n  }\n}\n\nreturn = {\n  uuid: '3f3e1091-8e43-41ca-a19a-881241370c31' // String = 'S'\n  username: 'someguy55',                       // String = 'S'\n  password: 'myPassword123'                    // String = 'S'\n  createdAt: 1470345881706,                    // Number = 'N'\n  updatedAt: 1470345881755                     // Number = 'N'\n}\n```",
+    "lineNumber": 236,
     "params": [
       {
         "nullable": null,
@@ -269,8 +269,8 @@
     "export": true,
     "importPath": "pyrope/lib/actions.js",
     "importStyle": "{update}",
-    "description": "Updates an item\n\nPreviously checks using findByIndex() if the item exits.\n If it doesn't, returns false.\n\nopts = {\n  tableName: String,\n  index: Object,       // Index used to query the item.\n  args: Object,        // Key-Value mapping of the arguments to change.\n  beforeHook: (attrName, args) Function // Callback function for every attribute.\n                                           Used to modify the key-value mapping of the attributes to\n                                           change before the item is updated. Must return object of\n                                           shape {attributeName: value}\n                                           Attribute names may be also modified.\n}",
-    "lineNumber": 271,
+    "description": "Updates an item\n\nPreviously checks using findByIndex() if the item exits.\n If it doesn't, returns false.\n\n```\nopts = {\n  tableName: String,\n  index: Object,       // Index used to query the item.\n  args: Object,        // Key-Value mapping of the arguments to change.\n  beforeHook: (attrName, args) Function // Callback function for every attribute.\n                                           Used to modify the key-value mapping of the attributes to\n                                           change before the item is updated. Must return object of\n                                           shape {attributeName: value}\n                                           Attribute names may be also modified.\n}\n```",
+    "lineNumber": 283,
     "params": [
       {
         "nullable": null,
@@ -311,7 +311,7 @@
     "importPath": "pyrope/lib/actions.js",
     "importStyle": null,
     "description": null,
-    "lineNumber": 307,
+    "lineNumber": 319,
     "undocument": true,
     "type": {
       "types": [
@@ -331,8 +331,8 @@
     "export": true,
     "importPath": "pyrope/lib/actions.js",
     "importStyle": "{destroy}",
-    "description": "Deletes an item\n\nPreviously checks using findByIndex() if the item exits.\n If it doesn't, returns false, otherwise returns the deleted item.\n\nopts = {\n  tableName: String,\n  index: Object,       // Index used to query the item.\n}",
-    "lineNumber": 357,
+    "description": "Deletes an item\n\nPreviously checks using findByIndex() if the item exits.\n If it doesn't, returns false, otherwise returns the deleted item.\n\n```\nopts = {\n  tableName: String,\n  index: Object,       // Index used to query the item.\n}\n```",
+    "lineNumber": 371,
     "params": [
       {
         "nullable": null,
@@ -371,7 +371,7 @@
     "access": null,
     "description": null,
     "lineNumber": 1,
-    "content": "\nimport { findByIndex, create, destroy } from './actions';\nimport { difference, intersection, isObject, isArray, isBoolean, isString, pluck } from 'underscore';\nimport { ddbClient } from './core';\nimport { iterateArrayOverPromise, buildAction } from './utils';\n\nconst DEBUG = false;\n\nconst log = (msg) => {if(DEBUG)console.log(msg)};\n\n/**\n * Creates associations between entities\n *\n * Handles 1:1, 1:N and N:N associations.\n * (!) Does not check for the existence of the items.\n *\n * ```\n * opts = {\n *   tableName: String,\n *   items: [\n *     {\n *       index: {[indexName]: '123'}, // Can specify multiple values to associate\n *       [hasMany: Boolean = false]   // Used to specify 1:N and 1:N associations\n *     }\n *   ]\n * }\n * ```\n *\n * @param {Object} opts The options object.\n * @return {Boolean|Promise} Resolves to true if successful, throws otherwise\n * @todo: use batchWriteItem and handle unprocessedItems\n *\n */\nexport const associate = ( opts ) => {\n  if(opts === undefined) return Promise.reject(`associate(): opts should be an object.`);\n  \n  const { tableName, items } = opts;\n  \n  // General validations\n  if(tableName === undefined || !isString(tableName)) return Promise.reject(`associate(): 'tableName' is undefined or not a string.`);\n  if(items === undefined || !isArray(items)) return Promise.reject(`associate(): 'items' is undefined or not an array.`);\n  if(items.length !== 2) return Promise.reject(`associate(): 'items' should have 2 elements.`);\n  if((items[0].hasMany && !isBoolean(items[0].hasMany)) || (items[1].hasMany && !isBoolean(items[1].hasMany))) return Promise.reject(`associate(): 'hasMany' should be boolean`);\n   \n  log('===========================================');\n  log(`Associating: \\n${JSON.stringify(items, null, 2)}`);\n   \n  // Iterate over the items (max 2)\n  return iterateArrayOverPromise(items, (item, prevItemAction = {}, i) => {\n    log('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~');\n    log(`* item[${i}] = ${JSON.stringify(item, null, 2)}`);\n    log(`prevItemAction = ${JSON.stringify(prevItemAction, null, 2)}`);\n    \n    // Item validations\n    if(Object.keys(item.index).length !== 1) return Promise.reject(`associate(): 'items[${i}].index' should have only 1 key-value pair.`);\n    \n    const index = item.index;\n    const indexKey = Object.keys(index)[0];\n    const indexValues = isArray(index[indexKey]) ? index[indexKey] : [index[indexKey]];\n    const itemHasMany = item.hasMany;\n    \n    // log(`itemIndex = ${JSON.stringify(itemIndex, null, 2)}`);\n    // log(`itemIndexKey = ${JSON.stringify(itemIndexKey, null, 2)}`);\n    // log(`itemIndexValues = ${JSON.stringify(itemIndexValues, null, 2)}`);\n    \n    // Iterate over each item's uuids\n    return iterateArrayOverPromise(indexValues, (indexValue, prevValueAction = {}) => {\n      const currIndex = {[indexKey]: indexValue};\n      \n      log('···········································');\n      log(`* currIndex = ${JSON.stringify(currIndex, null, 2)}`);\n      log(`prevUuidAction: ${JSON.stringify(prevValueAction, null, 2)}`);\n      \n      // Get the current item's uuid associations\n      return findByIndex({\n        tableName,\n        index: currIndex\n      }).then(itemAssociations => {\n        // Write current item's uuid if nothing found\n        if(itemAssociations === false) {\n          log(`No previous associations...`);\n          \n          // Add the current item's uuid\n          return buildAction('write', prevValueAction, prevItemAction, currIndex);\n          \n        } else {\n          if (!isArray(itemAssociations)) itemAssociations = [itemAssociations];\n  \n          const otherItem = items[1 - i];\n          const otherIndex = otherItem.index;\n          const otherIndexKey = Object.keys(otherIndex)[0];\n          const otherIndexValues = isArray(otherIndex[otherIndexKey]) ? otherIndex[otherIndexKey] : [otherIndex[otherIndexKey]];\n          \n          const itemAssociatedValues = pluck(itemAssociations, otherIndexKey);\n          const alreadyAssociated = intersection(itemAssociatedValues, otherIndexValues);\n  \n          log(`${JSON.stringify(currIndex)}.hasMany = ${itemHasMany}`);\n          log(`${JSON.stringify(currIndex)}.${otherIndexKey}s = ${JSON.stringify(itemAssociatedValues, null, 2)}`);\n          log(`${otherIndexKey}.uuids = ${JSON.stringify(otherIndexValues, null, 2)}`);\n          log(`alreadyAssociated = ${JSON.stringify(alreadyAssociated, null, 2)}`);\n  \n          // Preserve these associations\n          if(itemHasMany === true) {\n            log(`${index}.hasMany: Preserving previous association(s).`);\n    \n            if(alreadyAssociated.length === otherIndexValues.length) {\n              return buildAction('skip', prevValueAction, prevItemAction, currIndex);\n            } else {\n              return buildAction('write', prevValueAction, prevItemAction, currIndex);\n            }\n    \n          } else {\n            log(`Deleting previous association.`);\n            log(`currIndex: ${JSON.stringify(currIndex)}`);\n    \n            return destroy({\n              tableName,\n              index: currIndex\n            }).then((res) => {\n              if(res === false) return Promise.reject(`Could not destroy association ${JSON.stringify(index)}`);\n              \n              log(`Destroyed ${JSON.stringify(currIndex)}`);\n      \n              return buildAction('write', prevValueAction, prevItemAction, currIndex);\n            })\n          }\n        }\n      })\n    }, true).then(action => {\n      // End of uuid iteration\n      // todo: Remove this then()\n      log('\\nEnd of uuid iteration');\n      log(`Action: ${JSON.stringify(action, null, 2)}`);\n      \n      if(!isObject(action)) return Promise.reject(`Invalid action, should be object.`);\n  \n      return action;\n    })\n  }, true).then(action => {\n    // End of item iteration\n    log('\\nEnd of item iteration');\n    log('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~');\n    log(`Action: ${JSON.stringify(action, null, 2)}`);\n  \n    if(!isObject(action)) return Promise.reject(`Invalid action, should be object.`);\n    \n    // If there are actions to write...\n    if(action.write) {\n      action.skip = action.skip ? action.skip : [];\n      \n      const writeKeys = Object.keys(action.write);\n      const skipKeys = difference(Object.keys(action.skip), writeKeys);\n      \n      log(`writeKeys = ${writeKeys}`);\n      log(`skipKeys = ${skipKeys}`);\n      \n      const writeItems = writeKeys.map(item => {\n        return {index: item, uuids: action.write[item]};\n      }).concat(skipKeys.map(item => {\n        return {index: item, uuids: action.skip[item]};\n      }));\n      \n      log(`keys = ${JSON.stringify(writeItems, null ,2)}`);\n      \n      if(Object.keys(writeItems).length !== 2) return Promise.reject(`Attempting to assign with only one item.`);\n       \n      log(`\\nAbout to write associations...`);\n      \n      // TODO: Use batchWrite\n      // TODO: Critical! Watch for failed requests\n      return iterateArrayOverPromise(writeItems[0].uuids, item0uuid => {\n        return iterateArrayOverPromise(writeItems[1].uuids, item1uuid => {\n          return create({\n            tableName,\n            attributes: {\n              [writeItems[0].index]: item0uuid,\n              [writeItems[1].index]: item1uuid\n            }\n          }).then(res => true)\n        }, true)\n      }, true)\n    } else {\n      return false;\n    }\n  }).catch(err => Promise.reject(`associate(): ${err}`));\n};\n\n\n/**\n * Dissociates two items if an association is found\n *\n * item[0].uuid should be a scalar\n * item[1].uuid can be an array of associations to remove.\n *\n * ```\n * opts = {\n *   tableName: String,\n *   items: [\n *     {\n *       index: {indexName: any}, // index values should be a scalar\n *     },\n *     {\n *       index: {indexName: [any]}, // index values can be an array\n *     }\n *   ]\n * }\n * ```\n *\n * @param {Object} opts The options object\n * @return {Boolean} true if the association was removed, false if there is no association\n *\n * @todo: Handle unprocessed items. (critical)\n *\n */\nexport const dissociate = ( opts ) => {\n  if(!isObject(opts)) return Promise.reject(`dissociate(): 'opts' should be an object.`);\n  \n  const { tableName, items } = opts;\n  \n  let deleteRequests = [];\n  \n  // Validations\n  if(items === undefined || !isArray(items)) return Promise.reject(`dissociate(): 'items' is undefined or not an array.`);\n  if(tableName === undefined) return Promise.reject(`dissociate(): 'tableName' is undefined or not a string.`);\n  if(items.length !== 2) return Promise.reject(`dissociate(): 'items' should have 2 elements.`);\n  if(items[0].index === undefined || items[1].index === undefined) return Promise.reject(`dissociate(): 'items' should have an index.`);\n  \n  const index = items[0].index;\n  const indexKey = Object.keys(index)[0];\n  const indexValues = index[indexKey];\n  \n  const otherIndex = items[1].index;\n  const otherIndexKey = Object.keys(otherIndex)[0];\n  const otherIndexValues =\n    otherIndex[otherIndexKey] === null ?\n      null :\n      isArray(otherIndex[otherIndexKey]) ?\n        otherIndex[otherIndexKey] :\n        [otherIndex[otherIndexKey]];\n  \n  if(isArray(indexValues)) return Promise.reject(`dissociate(): items[0] index value (uuid) cannot be an array.`);\n  \n  log(`Dissociating ${JSON.stringify(opts, null, 2)}`);\n    \n  return findByIndex({\n    tableName,\n    index: index\n  }).then(res => {\n    if(res === false) return Promise.resolve(false); // No association found\n    \n    log(`${index}] associations = ${JSON.stringify(res, null, 2)}`);\n  \n    // Build deleteRequests object\n    if(otherIndexValues === null){\n      deleteRequests = res.map(currItem => ({DeleteRequest: {Key: {uuid: currItem.uuid, createdAt: currItem.createdAt}}}));\n    } else {\n      deleteRequests = res.filter(currItem => {\n        let flag = false;\n        \n        otherIndexValues.forEach(val => {\n          flag = flag || (currItem[otherIndexKey] === val)\n        });\n        \n        return flag;\n      }).map(currItem => ({DeleteRequest: {Key: {uuid: currItem.uuid, createdAt: currItem.createdAt}}}));\n    }\n    \n    if(deleteRequests.length === 0) return Promise.resolve(false);\n  \n    const params = {\n      RequestItems: {\n        [tableName]: deleteRequests\n      }\n    };\n  \n    log(`dissociate params: ${JSON.stringify(params, null, 2)}`);\n  \n    return ddbClient('batchWrite', params)\n      .then(res => {\n        if(res.UnprocessedItems && Object.keys(res.UnprocessedItems).length > 0) return Promise.reject('dissociate() batch: Warning, unprocessed items.' + JSON.stringify(res.UnprocessedItems, null, 2));\n        \n        return Promise.resolve(true);\n      })\n  }).catch(err => Promise.reject(`dissociate(): ${err}`))\n};\n\n/**\n *  Returns the associations of the specified item with respect to another item\n *\n * ```\n *  opts = {\n *    tableName: String,\n *    items: [\n *      {\n *        index: {key: value}\n *      },\n *      {\n *        index: String\n *      }\n *    ]\n *  }\n *  ```\n *\n *  @params {Object} opts The options object.\n *  @return {Promised Array}\n */\nexport const getAssociations = ( opts ) => new Promise((resolve, reject) => {\n  if(!isObject(opts)) return reject(`getAssociations(): 'opts' should be an object.`);\n  \n  const { tableName, items } = opts;\n  \n  if(items === undefined || !isArray(items)) return reject(`getAssociations(): 'items' is undefined or not an array.`);\n  if(tableName === undefined) return reject(`getAssociations(): 'tableName' is undefined or not a string.`);\n  if(items.length !== 2) return reject(`getAssociations(): 'items' should have 2 elements.`);\n  if(!isObject(items[0].index)) return reject(`getAssociations(): items[0].index should be an object.`);\n  if(!isString(items[1].index)) return reject(`getAssociations(): items[1].index should be a string.`);\n  \n  const indexKey = Object.keys(items[0].index)[0];\n  const indexValue = items[0].index[indexKey];\n  \n  findByIndex({\n    tableName,\n    index: {[indexKey]: indexValue}\n  })\n    .then(res => resolve(pluck(res, items[1].index)))\n    .catch(err => reject(`getAssociations(): ${err}`));\n});"
+    "content": "\nimport { findByIndex, create, destroy } from './actions';\nimport { difference, intersection, isObject, isArray, isBoolean, isString, pluck } from 'underscore';\nimport { ddbClient } from './core';\nimport { iterateArrayOverPromise, buildAction } from './utils';\nimport { updateCounter } from './counters';\n\nconst DEBUG = false;\n\nconst log = (msg) => {if(DEBUG)console.log(msg)};\n\n/**\n * Creates associations between entities\n *\n * Handles 1:1, 1:N and N:N associations.\n * (!) Does not check for the existence of the items.\n *\n * ```\n * opts = {\n *   tableName: String,\n *   items: [\n *     {\n *       index: {[indexName]: '123'}, // Can specify multiple values to associate\n *       [hasMany: Boolean = false]   // Used to specify 1:N and 1:N associations\n *     }\n *   ]\n * }\n * ```\n *\n * @param {Object} opts The options object.\n * @return {Boolean|Promise} Resolves to true if successful, throws otherwise\n * @todo: use batchWriteItem and handle unprocessedItems\n *\n */\nexport const associate = ( opts ) => {\n  if(opts === undefined) return Promise.reject(`associate() > opts should be an object.`);\n  \n  const { tableName, items } = opts;\n  \n  // General validations\n  if(tableName === undefined || !isString(tableName)) return Promise.reject(`associate() > 'tableName' is undefined or not a string.`);\n  if(items === undefined || !isArray(items)) return Promise.reject(`associate() > 'items' is undefined or not an array.`);\n  if(items.length !== 2) return Promise.reject(`associate() > 'items' should have 2 elements.`);\n  if((items[0].hasMany && !isBoolean(items[0].hasMany)) || (items[1].hasMany && !isBoolean(items[1].hasMany))) return Promise.reject(`associate() > 'hasMany' should be boolean`);\n   \n  log('===========================================');\n  log(`Associating: \\n${JSON.stringify(items, null, 2)}`);\n   \n  // Iterate over the items (max 2)\n  return iterateArrayOverPromise(items, (item, prevItemAction = {}, i) => {\n    log('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~');\n    log(`* item[${i}] = ${JSON.stringify(item, null, 2)}`);\n    log(`prevItemAction = ${JSON.stringify(prevItemAction, null, 2)}`);\n    \n    // Item validations\n    if(Object.keys(item.index).length !== 1) return Promise.reject(`associate() > 'items[${i}].index' should have only 1 key-value pair.`);\n    \n    const index = item.index;\n    const indexKey = Object.keys(index)[0];\n    const indexValues = isArray(index[indexKey]) ? index[indexKey] : [index[indexKey]];\n    const itemHasMany = item.hasMany;\n    \n    // log(`itemIndex = ${JSON.stringify(itemIndex, null, 2)}`);\n    // log(`itemIndexKey = ${JSON.stringify(itemIndexKey, null, 2)}`);\n    // log(`itemIndexValues = ${JSON.stringify(itemIndexValues, null, 2)}`);\n    \n    // Iterate over each item's uuids\n    return iterateArrayOverPromise(indexValues, (indexValue, prevValueAction = {}) => {\n      const currIndex = {[indexKey]: indexValue};\n      \n      log('···········································');\n      log(`* currIndex = ${JSON.stringify(currIndex, null, 2)}`);\n      log(`prevUuidAction: ${JSON.stringify(prevValueAction, null, 2)}`);\n      \n      // Get the current item's uuid associations\n      return findByIndex({\n        tableName,\n        index: currIndex\n      }).then(itemAssociations => {\n        log('item associations', itemAssociations)\n        \n        // Write current item's uuid if nothing found\n        if(itemAssociations === false) {\n          log(`No previous associations...`);\n          \n          // Add the current item's uuid\n          return buildAction('write', prevValueAction, prevItemAction, currIndex);\n          \n        } else {\n          if (!isArray(itemAssociations)) itemAssociations = [itemAssociations];\n  \n          const otherItem = items[1 - i];\n          const otherIndex = otherItem.index;\n          const otherIndexKey = Object.keys(otherIndex)[0];\n          const otherIndexValues = isArray(otherIndex[otherIndexKey]) ? otherIndex[otherIndexKey] : [otherIndex[otherIndexKey]];\n          \n          const itemAssociatedValues = pluck(itemAssociations, otherIndexKey);\n          const alreadyAssociated = intersection(itemAssociatedValues, otherIndexValues);\n  \n          log(`${JSON.stringify(currIndex)}.hasMany = ${itemHasMany}`);\n          log(`${JSON.stringify(currIndex)}.${otherIndexKey}s = ${JSON.stringify(itemAssociatedValues, null, 2)}`);\n          log(`${otherIndexKey}.uuids = ${JSON.stringify(otherIndexValues, null, 2)}`);\n          log(`alreadyAssociated = ${JSON.stringify(alreadyAssociated, null, 2)}`);\n  \n          // Preserve these associations\n          if(itemHasMany === true) {\n            log(`${index}.hasMany: Preserving previous association(s).`);\n    \n            if(alreadyAssociated.length === otherIndexValues.length) {\n              return buildAction('skip', prevValueAction, prevItemAction, currIndex);\n            } else {\n              return buildAction('write', prevValueAction, prevItemAction, currIndex);\n            }\n    \n          } else {\n            log(`Deleting previous association.`);\n            log(`currIndex: ${JSON.stringify(currIndex)}`);\n    \n            return destroy({\n              tableName,\n              index: currIndex\n            }).then((res) => {\n              if(res === false) return Promise.reject(`Could not destroy association ${JSON.stringify(index)}`);\n              \n              log(`Destroyed ${JSON.stringify(currIndex)}`);\n      \n              return buildAction('write', prevValueAction, prevItemAction, currIndex);\n            })\n          }\n        }\n      })\n    }, true).then(action => {\n      // End of uuid iteration\n      // todo: Remove this then()\n      log('\\nEnd of uuid iteration');\n      log(`Action: ${JSON.stringify(action, null, 2)}`);\n      \n      if(!isObject(action)) return Promise.reject(`Invalid action, should be object.`);\n  \n      return action;\n    })\n  }, true).then(action => {\n    // End of item iteration\n    log('\\nEnd of item iteration');\n    log('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~');\n    log(`Action: ${JSON.stringify(action, null, 2)}`);\n  \n    if(!isObject(action)) return Promise.reject(`Invalid action, should be object.`);\n    \n    // If there are actions to write...\n    if(action.write) {\n      action.skip = action.skip ? action.skip : [];\n      \n      const writeKeys = Object.keys(action.write);\n      const skipKeys = difference(Object.keys(action.skip), writeKeys);\n      \n      log(`writeKeys = ${writeKeys}`);\n      log(`skipKeys = ${skipKeys}`);\n      \n      const writeItems = writeKeys.map(item => {\n        return {index: item, uuids: action.write[item]};\n      }).concat(skipKeys.map(item => {\n        return {index: item, uuids: action.skip[item]};\n      }));\n      \n      log(`keys = ${JSON.stringify(writeItems, null ,2)}`);\n      \n      if(Object.keys(writeItems).length !== 2) return Promise.reject(`Attempting to assign with only one item.`);\n       \n      log(`\\nAbout to write associations...`);\n      \n      // TODO: Use batchWrite\n      // TODO: Critical! Watch for failed requests\n      return iterateArrayOverPromise(writeItems[0].uuids, item0uuid => {\n        return iterateArrayOverPromise(writeItems[1].uuids, item1uuid => {\n          return create({\n            tableName,\n            attributes: {\n              [writeItems[0].index]: item0uuid,\n              [writeItems[1].index]: item1uuid\n            }\n          }).then(res => true)\n        }, true)\n      }, true)\n    } else {\n      return false;\n    }\n  }).catch(err => Promise.reject(`associate() > ${err}`));\n};\n\n\n/**\n * Dissociates two items if an association is found\n *\n * item[0].uuid should be a scalar\n * item[1].uuid can be an array of associations to remove.\n *\n * ```\n * opts = {\n *   tableName: String,\n *   items: [\n *     {\n *       index: {indexName: any}, // index values should be a scalar\n *     },\n *     {\n *       index: {indexName: [any]}, // index values can be an array\n *     }\n *   ]\n * }\n * ```\n *\n * @param {Object} opts The options object\n * @return {Boolean} true if the association was removed, false if there is no association\n *\n * @todo: Handle unprocessed items. (critical)\n *\n */\nexport const dissociate = ( opts ) => {\n  if(!isObject(opts)) return Promise.reject(`dissociate() > 'opts' should be an object.`);\n  \n  const { tableName, items } = opts;\n  \n  let deleteRequests = [];\n  \n  // Validations\n  if(items === undefined || !isArray(items)) return Promise.reject(`dissociate() > 'items' is undefined or not an array.`);\n  if(tableName === undefined) return Promise.reject(`dissociate() > 'tableName' is undefined or not a string.`);\n  if(items.length !== 2) return Promise.reject(`dissociate() > 'items' should have 2 elements.`);\n  if(items[0].index === undefined || items[1].index === undefined) return Promise.reject(`dissociate() > 'items' should have an index.`);\n  \n  const index = items[0].index;\n  const indexKey = Object.keys(index)[0];\n  const indexValues = index[indexKey];\n  \n  const otherIndex = items[1].index;\n  const otherIndexKey = Object.keys(otherIndex)[0];\n  const otherIndexValues =\n    otherIndex[otherIndexKey] === null ?\n      null :\n      isArray(otherIndex[otherIndexKey]) ?\n        otherIndex[otherIndexKey] :\n        [otherIndex[otherIndexKey]];\n  \n  if(isArray(indexValues)) return Promise.reject(`dissociate() > items[0] index value (uuid) cannot be an array.`);\n  \n  log(`Dissociating ${JSON.stringify(opts, null, 2)}`);\n    \n  return findByIndex({\n    tableName,\n    index: index\n  }).then(res => {\n    if(res === false) return Promise.resolve(false); // No association found\n    \n    log(`${index}] associations = ${JSON.stringify(res, null, 2)}`);\n  \n    // Build deleteRequests object\n    if(otherIndexValues === null){\n      deleteRequests = res.map(currItem => ({DeleteRequest: {Key: {uuid: currItem.uuid, createdAt: currItem.createdAt}}}));\n    } else {\n      deleteRequests = res.filter(currItem => {\n        let flag = false;\n        \n        otherIndexValues.forEach(val => {\n          flag = flag || (currItem[otherIndexKey] === val)\n        });\n        \n        return flag;\n      }).map(currItem => ({DeleteRequest: {Key: {uuid: currItem.uuid, createdAt: currItem.createdAt}}}));\n    }\n    \n    if(deleteRequests.length === 0) return Promise.resolve(false);\n  \n    const params = {\n      RequestItems: {\n        [tableName]: deleteRequests\n      }\n    };\n  \n    log(`dissociate params: ${JSON.stringify(params, null, 2)}`);\n    \n    return Promise.resolve(params);\n  })\n    .then(params => ddbClient('batchWrite', params)\n    .then(res => {\n      if(res.UnprocessedItems && Object.keys(res.UnprocessedItems).length > 0) return Promise.reject('dissociate() batch: Warning, unprocessed items.' + JSON.stringify(res.UnprocessedItems, null, 2));\n    })\n    .then(() => updateCounter({\n      tableName,\n      step: -1 * deleteRequests.length\n    }))\n    .then(() => Promise.resolve(true)))\n    .catch(err => Promise.reject(`dissociate() > ${err}`))\n};\n\n/**\n *  Returns the associations of the specified item with respect to another item\n *\n * ```\n *  opts = {\n *    tableName: String,\n *    items: [\n *      {\n *        index: {key: value}\n *      },\n *      {\n *        index: String\n *      }\n *    ]\n *  }\n *  ```\n *\n *  @params {Object} opts The options object.\n *  @return {Promise} - Array of uuids, [] if no assoc. found\n */\nexport const getAssociations = ( opts ) => new Promise((resolve, reject) => {\n  if(!isObject(opts)) return reject(`getAssociations() > 'opts' should be an object.`);\n  \n  const { tableName, items } = opts;\n  \n  if(items === undefined || !isArray(items)) return reject(`getAssociations() > 'items' is undefined or not an array.`);\n  if(tableName === undefined) return reject(`getAssociations() > 'tableName' is undefined or not a string.`);\n  if(items.length !== 2) return reject(`getAssociations() > 'items' should have 2 elements.`);\n  if(!isObject(items[0].index)) return reject(`getAssociations() > items[0].index should be an object.`);\n  if(!isString(items[1].index)) return reject(`getAssociations() > items[1].index should be a string.`);\n  \n  const indexKey = Object.keys(items[0].index)[0];\n  const indexValue = items[0].index[indexKey];\n  \n  findByIndex({\n    tableName,\n    index: {[indexKey]: indexValue}\n  })\n    .then(res => resolve(pluck(res, items[1].index)))\n    .catch(err => reject(`getAssociations() > ${err}`));\n});"
   },
   {
     "__docId__": 13,
@@ -386,7 +386,7 @@
     "importPath": "pyrope/lib/associations.js",
     "importStyle": null,
     "description": null,
-    "lineNumber": 7,
+    "lineNumber": 8,
     "undocument": true,
     "type": {
       "types": [
@@ -407,7 +407,7 @@
     "importPath": "pyrope/lib/associations.js",
     "importStyle": null,
     "description": null,
-    "lineNumber": 9,
+    "lineNumber": 10,
     "undocument": true,
     "type": {
       "types": [
@@ -428,7 +428,7 @@
     "importPath": "pyrope/lib/associations.js",
     "importStyle": "{associate}",
     "description": "Creates associations between entities\n\nHandles 1:1, 1:N and N:N associations.\n(!) Does not check for the existence of the items.\n\n```\nopts = {\n  tableName: String,\n  items: [\n    {\n      index: {[indexName]: '123'}, // Can specify multiple values to associate\n      [hasMany: Boolean = false]   // Used to specify 1:N and 1:N associations\n    }\n  ]\n}\n```",
-    "lineNumber": 34,
+    "lineNumber": 35,
     "params": [
       {
         "nullable": null,
@@ -469,7 +469,7 @@
     "importPath": "pyrope/lib/associations.js",
     "importStyle": "{dissociate}",
     "description": "Dissociates two items if an association is found\n\nitem[0].uuid should be a scalar\nitem[1].uuid can be an array of associations to remove.\n\n```\nopts = {\n  tableName: String,\n  items: [\n    {\n      index: {indexName: any}, // index values should be a scalar\n    },\n    {\n      index: {indexName: [any]}, // index values can be an array\n    }\n  ]\n}\n```",
-    "lineNumber": 215,
+    "lineNumber": 218,
     "params": [
       {
         "nullable": null,
@@ -509,7 +509,7 @@
     "importPath": "pyrope/lib/associations.js",
     "importStyle": "{getAssociations}",
     "description": " Returns the associations of the specified item with respect to another item\n\n```\n opts = {\n   tableName: String,\n   items: [\n     {\n       index: {key: value}\n     },\n     {\n       index: String\n     }\n   ]\n }\n ```",
-    "lineNumber": 307,
+    "lineNumber": 315,
     "unknown": [
       {
         "tagName": "@params",
@@ -519,10 +519,10 @@
     "return": {
       "nullable": null,
       "types": [
-        "Promised Array"
+        "Promise"
       ],
       "spread": false,
-      "description": ""
+      "description": "Array of uuids, [] if no assoc. found"
     },
     "type": {
       "types": [
@@ -659,7 +659,7 @@
     "access": null,
     "description": null,
     "lineNumber": 1,
-    "content": "import { isNumber } from 'underscore';\nimport { genTableDigest } from './utils';\nimport { ddbClient } from './core';\n\nexport const increaseCounter = ( opts ) => updateCounter({...opts, step: 1});\n\nexport const decreaseCounter = ( opts ) => updateCounter({...opts, step: -1});\n\nconst updateCounter = ( opts ) => new Promise((resolve, reject) => {\n  const counterTableName = process.env.NODE_ENV === 'test' ? '_test_table_counters' : '_table_counters';\n  const { tableName, step } = opts;\n  \n  if(tableName === undefined) return reject(`updateCounter(): Missing 'tableName'`);\n  if(!isNumber(step)) return reject(`updateCounter(): 'step' is not a number.`);\n  \n  const tableDigest = genTableDigest(tableName);\n  \n  ddbClient('update', {\n    TableName: counterTableName,\n    Key: {tableDigest},\n    UpdateExpression: `ADD #count :step`,\n    ExpressionAttributeNames: {\n      '#count': 'count'\n    },\n    ExpressionAttributeValues: {\n      ':step': step\n    },\n    ReturnValues: 'ALL_NEW'\n  })\n    .then(res => {\n      if(res.Attributes.count === undefined) {\n        reject(`Error while updating counter for '${tableName}'.`);\n      } else {\n        resolve(res.Attributes.count);\n      }\n    })\n    .catch(err => reject(`updateCounter(): ${err}`))\n});"
+    "content": "import { isNumber } from 'underscore';\nimport { genTableDigest } from './utils';\nimport { ddbClient } from './core';\n\nexport const increaseCounter = ( opts ) => updateCounter({...opts, step: 1});\n\nexport const decreaseCounter = ( opts ) => updateCounter({...opts, step: -1});\n\nexport const updateCounter = ( opts ) => new Promise((resolve, reject) => {\n  const counterTableName = process.env.NODE_ENV === 'test' ? '_test_table_counters' : '_table_counters';\n  const { tableName, step } = opts;\n  \n  if(tableName === undefined) return reject(`updateCounter(): Missing 'tableName'`);\n  if(!isNumber(step)) return reject(`updateCounter(): 'step' is not a number.`);\n  \n  const tableDigest = genTableDigest(tableName);\n  \n  ddbClient('update', {\n    TableName: counterTableName,\n    Key: {tableDigest},\n    UpdateExpression: `ADD #count :step`,\n    ExpressionAttributeNames: {\n      '#count': 'count'\n    },\n    ExpressionAttributeValues: {\n      ':step': step\n    },\n    ReturnValues: 'ALL_NEW'\n  })\n    .then(res => {\n      if(res.Attributes.count === undefined) {\n        reject(`Error while updating counter for '${tableName}'.`);\n      } else {\n        resolve(res.Attributes.count);\n      }\n    })\n    .catch(err => reject(`updateCounter(): ${err}`))\n});"
   },
   {
     "__docId__": 25,
@@ -712,9 +712,9 @@
     "memberof": "lib/counters.js",
     "longname": "lib/counters.js~updateCounter",
     "access": null,
-    "export": false,
+    "export": true,
     "importPath": "pyrope/lib/counters.js",
-    "importStyle": null,
+    "importStyle": "{updateCounter}",
     "description": null,
     "lineNumber": 9,
     "undocument": true,
@@ -735,10 +735,782 @@
     "access": null,
     "description": null,
     "lineNumber": 1,
-    "content": "\nimport { ddb, ddbClient } from './core';\nimport {\n  count, all, take, first, last, findByIndex, create, update, destroy\n} from './actions';\nimport { associate, dissociate, getAssociations } from './associations';\n\nexport {\n  ddb, ddbClient,\n  count, all, take, first, last, findByIndex, create, update, destroy,\n  associate, dissociate, getAssociations\n};"
+    "content": "\nimport { ddb, ddbClient } from './core';\nimport {\n  count, all, take, first, last, findByIndex, create, update, destroy\n} from './actions';\nimport { associate, dissociate, getAssociations } from './associations';\nimport PyropeModel from './models';\n\nexport {\n  ddb, ddbClient,\n  count, all, take, first, last, findByIndex, create, update, destroy,\n  associate, dissociate, getAssociations,\n};\n\nexport default PyropeModel;"
   },
   {
     "__docId__": 29,
+    "kind": "file",
+    "static": true,
+    "variation": null,
+    "name": "lib/models.js",
+    "memberof": null,
+    "longname": "lib/models.js",
+    "access": null,
+    "description": null,
+    "lineNumber": 1,
+    "content": "import * as pyrope from './index';\nimport { isArray, isObject, sortBy, find, isString } from 'underscore';\nimport Inflector from 'inflected';\n\n/**\n * Pyrope Model ORM\n *\n */\nexport default class PyropeModel {\n  static name;\n  static humanName;\n  static fields;\n  static table;\n  static validations;\n  static defaultQueryKey;\n  \n  /**\n   * PyropeModel#constructor\n   *\n   * @param {GraphQLObjectType} schema - The model schema.\n   * @param {object} opts - The options object.\n   * @param {string} opts.name - Custom name.\n   * @param {string} opts.humanName - Custom human name (for errors).\n   * @param {string} opts.table - Custom table to query from.\n   * @param {string} opts.defaultQueryKey - Custom default query key.\n   * @param {function(fields: object, fieldName: string)} opts.validations - Validation function.\n   */\n  constructor(schema, opts = {}) {\n    if(!schema) throw new Error(`PyropeModel#constructor(): 'schema' is undefined.`);\n    if(!schema.name) throw new Error('PyropeModel#constructor(): schema.name is undefined.');\n    if(!schema._typeConfig.fields) throw new Error('PyropeModel#constructor(): schema.fields is undefined.');\n    \n    this.name = opts.name || schema.name;\n    this.humanName = opts.humanName || Inflector.humanize(this.name);\n    this.table = opts.table || Inflector.tableize(schema.name);\n    this.fields = schema._typeConfig.fields();\n    this.defaultQueryKey = opts.defaultQueryKey || 'uuid';\n    this.validations = opts.validations;\n  }\n  \n  /**\n   * Retrieve a record given an index\n   *\n   * @param {object} index - The index used to find the record.\n   * @param {string} index.key - The index key used to query the record.\n   * @param {string} index.value - The index value used to query the record.\n   * @returns {Promise<Map, Promise.reject>} - The retrieved record map. Rejects if record is not found.\n   */\n  get(index) {\n    return new Promise((resolve, reject) => {\n      if(!index || !isObject(index)) return reject(`PyropeModel#get(): 'index' is undefined or not an object.`)\n      pyrope.findByIndex({\n        tableName: this.table,\n        index\n      })\n        .then(records => {\n          if(records === false) {\n            reject(`${this.humanName} not found.`);\n          } else if(isArray(records) && records.length > 1) {\n            reject('PyropeModel.get(): More than one item with the specified index were found.');\n          } else {\n            resolve(records[0])\n          }\n        })\n        .catch(err => reject(`PyropeModel#get() > ${err}`));\n    });\n  }\n  \n  /**\n   * Get all records\n   *\n   * @param {object} opts - Options object.\n   * @param {string} opts.ascending - Options object.\n   * @param {number} opts.limit - The amount of records to retrieve.\n   * @param {string} opts.cursor - The cursor from which the query continues.\n   * @returns {Promise<Array>} - An array with the maps of the retrieved objects. Empty array if none is found.\n   */\n  getAll(opts = {}) {\n    return new Promise((resolve, reject) => {\n      const optsAll = {\n        ascending: (opts.order && opts.order === 'asc' ? true : (opts.order && opts.order === 'desc' ? false : true)),\n        limit: (opts.limit || 0),\n        cursor: (opts.cursor || undefined),\n      };\n  \n      pyrope.all({\n        tableName: this.table,\n        ...optsAll\n      })\n        .then(records => {\n          if(records.Cursor) {\n            records.Items[records.Items.length-1].cursor = records.Cursor; // assign cursor to the last item\n          }\n      \n          resolve(records.Items)\n        })\n        .catch(err => reject(`PyropeModel#getAll() > ${err}`));\n    });\n  }\n  \n  /**\n   * Create a record\n   *\n   *\n   *\n   * @param opts\n   * @returns {Promise}\n   */\n  create(fields = {}, opts = {}) {\n    return new Promise((resolve, reject) => {\n      if(!fields || !isObject(fields)) return reject(`PyropeModel#create(): 'fields' is undefined or not an object.`);\n      \n      const {\n        beforeValidation,\n        afterValidation,\n        beforeCreate,\n        afterCreate,\n        fieldName\n      } = opts;\n      \n      const emptyHook = (fields) => new Promise((resolve, reject) => resolve(fields));\n      const createHook = (fields, fieldName) => new Promise((res, rej) => {\n        pyrope.findByIndex({\n          tableName: this.table,\n          index: {[this.defaultQueryKey]: fields[this.defaultQueryKey]}\n        })\n          .then(exists => {\n            if(exists !== false) {\n              return reject(`${this.humanName} already exists.`);\n            }\n          })\n          .then(() => pyrope.create({\n            tableName: this.table,\n            attributes: fields\n          }))\n          .then(record => res(record))\n          .catch(err => rej(`createHook() > ${err}`));\n      });\n  \n      let hookChain = [];\n      \n      hookChain.push(beforeValidation || emptyHook);\n      hookChain.push(this.validations || emptyHook);\n      hookChain.push(afterValidation  || emptyHook);\n      hookChain.push(beforeCreate     || emptyHook);\n      hookChain.push(createHook);\n      hookChain.push(afterCreate      || emptyHook);\n  \n      hookChain.reduce((prevPromise, currPromise) => prevPromise\n        .then(res => currPromise(res, fieldName)), Promise.resolve(fields))\n        .then(res => resolve(res))\n        .catch(err => reject(`PyropeModel#create() > ${err}`));\n    });\n  }\n  \n  update(index, fields = {}, opts = {}) {\n    return new Promise((resolve, reject) => {\n      if(!index || !isObject(index)) return reject(`PyropeModel#update(): 'index' is undefined or not an object.`);\n      if(fields && !isObject(fields)) return reject(`PyropeModel#update(): 'fields' is not an object.`);\n  \n      const {\n        beforeValidation,\n        afterValidation,\n        beforeUpdate,\n        afterUpdate,\n        fieldName\n      } = opts;\n  \n      const emptyHook = (fields) => new Promise((resolve, reject) => resolve(fields));\n      const updateHook = (fields) => new Promise((res, rej) => {\n        pyrope.update({\n          tableName: this.table,\n          index,\n          attributes: fields\n        })\n          .then(record => {\n            if(record === false) {\n              return rej(`${this.humanName} not found.`);\n            } else {\n              const indexKey = Object.keys(index)[0];\n              const newIndex = {\n                [indexKey]: record[indexKey]\n              };\n        \n              return res(this.get(newIndex))\n            }\n          })\n          .catch(err => reject(`updateHook() > ${err}`));\n      });\n      \n      let hookChain = [];\n  \n      hookChain.push(beforeValidation || emptyHook);\n      hookChain.push(this.validations || emptyHook);\n      hookChain.push(afterValidation  || emptyHook);\n      hookChain.push(beforeUpdate     || emptyHook);\n      hookChain.push(updateHook);\n      hookChain.push(afterUpdate      || emptyHook);\n  \n      hookChain.reduce((prevPromise, currPromise) => prevPromise\n        .then(res => currPromise(res, fieldName, index)), Promise.resolve(fields))\n        .then(res => resolve(res))\n        .catch(err => reject(`PyropeModel#update() > ${err}`));\n    });\n  }\n  \n  destroy(index, opts = {}) {\n    return new Promise((resolve, reject) => {\n      if(!index || !isObject(index)) return reject(`PyropeModel#destroy(): 'index' is undefined or not an object.`);\n    \n      const {\n        beforeValidation,\n        afterValidation,\n        beforeDestroy,\n        afterDestroy,\n        fieldName\n      } = opts;\n    \n      const emptyHook = (fields) => new Promise((resolve, reject) => resolve(fields));\n      const deleteHook = (fields) => new Promise((res, rej) => {\n        pyrope.destroy({\n          tableName: this.table,\n          index\n        })\n          .then(record => {\n            if(record === false) {\n              return rej(`${this.humanName} not found.`);\n            } else {\n              return res(record)\n            }\n          })\n          .catch(err => reject(`destroyHook() > ${err}`));\n      });\n    \n      let hookChain = [];\n    \n      hookChain.push(beforeValidation || emptyHook);\n      hookChain.push(this.validations || emptyHook);\n      hookChain.push(afterValidation  || emptyHook);\n      hookChain.push(beforeDestroy    || emptyHook);\n      hookChain.push(deleteHook);\n      hookChain.push(afterDestroy     || emptyHook);\n    \n      hookChain.reduce((prevPromise, currPromise) => prevPromise\n        .then(res => currPromise(res, fieldName, index)), Promise.resolve(this.get(index)))\n        .then(res => resolve(res))\n        .catch(err => reject(`PyropeModel#destroy() > ${err}`));\n    });\n  }\n  \n  /**\n   * Get a child (1:1)\n   *\n   * @param {string} uuid - The index value to query the parent.\n   * @param {string} childIndexKey - The index key used to query the child.\n   * @param {function(source: object)} childResolver - Resolver function.\n   * @param {object} opts - The options object.\n   * @param {string} opts.table - Custom association table to query from.\n   * @returns {Promise<Map, null>} - null if not found\n   */\n  getChild(uuid, childIndexKey, childResolver, opts = {}) {\n    return new Promise((resolve, reject) => {\n      if(!uuid) return reject(`PyropeModel#getChild(): 'uuid' is undefined.`);\n      \n      if(!childIndexKey || !isString(childIndexKey)) return reject(`PyropeModel#getChild(): 'childIndexKey' is undefined or not a string.`);\n  \n      const parentIndexKey = Inflector.underscore(Inflector.singularize(this.name));\n      childIndexKey = Inflector.underscore(Inflector.singularize(childIndexKey));\n      const tableName = opts.table || this.buildAssociationTableName(childIndexKey);\n      \n      pyrope.getAssociations({\n        tableName: tableName,\n        items: [\n          {index: {[parentIndexKey]: uuid}},\n          {index: childIndexKey}\n        ]\n      })\n        .then(associations => {\n          if(associations.length > 1) {\n            reject(`PyropeModel#getChild(): Expected only one association.`);\n          } else if(associations.length === 0) {\n            resolve(null);\n          } else {\n            return childResolver({uuid: associations[0]})\n          }\n        })\n        .then(record => resolve(record))\n        .catch(err => reject(`PyropeModel#getChild() > ${err}`))\n    });\n  }\n  \n  buildItemIndices(uuid, childIndex) {\n    if(!uuid) throw new Error(`'uuid' is undefined.`);\n    if(!childIndex || !isObject(childIndex)) throw new Error(`'index' is undefined or not an object.`);\n    if(Object.keys(childIndex).length > 1) throw new Error(`'index' should have only one key-value pair.`);\n  \n    const childIndexKey = Inflector.underscore(Inflector.singularize(Object.keys(childIndex)[0]));\n    // const childIndexValue = childIndex[childIndexKey];\n    const parentIndexKey = Inflector.underscore(Inflector.singularize(this.name));\n    const parentIndexValue = uuid;\n  \n    if(!Object.keys(this.fields).find(f => f === childIndexKey)) throw new Error(`'${childIndexKey}' is not a field of '${this.name}'.`);\n    if(!this.fields[childIndexKey].type) throw new Error(`'${childIndexKey}' is missing type.`);\n    if(!this.fields[childIndexKey].type._typeConfig) throw new Error(`'${childIndexKey}.type' is missing _typeConfig.`);\n    if(!this.fields[childIndexKey].type._typeConfig.fields) throw new Error(`'${childIndexKey}' is missing fields.`);\n    if(!(Object.keys(this.fields[childIndexKey].type._typeConfig.fields()).find(f => f === parentIndexKey ))) throw new Error(`'${childIndexKey}' is missing field '${parentIndexKey}'.`);\n  \n  \n    const childFields = this.fields[childIndexKey].type._typeConfig.fields();\n    const parentFields = this.fields;\n    const childHasManyParents = childFields[parentIndexKey].hasMany || false;\n    const parentHasManyChildren = parentFields[childIndexKey].hasMany || false;\n  \n    const parentIndex = {[parentIndexKey]: parentIndexValue};\n    \n    return [\n      {\n        index: parentIndex,\n        hasMany: parentHasManyChildren,\n      },\n      {\n        index: childIndex,\n        childHasManyParents\n      }\n    ];\n  }\n  \n  buildAssociationTableName(associationKey) {\n    return sortBy([this.name, associationKey].map(t => Inflector.tableize(t)), t => t).join('_');\n  }\n  \n  /**\n   *\n   * @param uuid\n   * @param childIndex\n   * @param opts\n   * @returns {Promise}\n   */\n  setChild(uuid, childIndex, opts = {}) {\n    return new Promise((resolve, reject) => {\n      if(!uuid) return reject(`PyropeModel#setChild(): 'uuid' is undefined.`);\n      if(!childIndex || !isObject(childIndex)) return reject(`PyropeModel#setChild(): 'index' is undefined or not an object.`);\n      if(Object.keys(childIndex).length > 1) return reject(`PyropeModel#setChild(): 'index' should have only one key-value pair.`);\n  \n      const childIndexKey = Inflector.underscore(Inflector.singularize(Object.keys(childIndex)[0]));\n      \n      let items;\n      \n      try {\n        items = this.buildItemIndices(uuid, childIndex);\n      } catch(err) {\n        return reject(`PyropeModel#setChild() > ${err}`);\n      }\n      \n      const tableName = opts.table || this.buildAssociationTableName(childIndexKey);\n      \n      pyrope.associate({tableName, items})\n        .then(() => resolve(true))\n        .catch(err => reject(`PyropeModel#setChild() > ${err}`))\n    });\n  }\n  \n  /**\n   *\n   * @param uuid\n   * @param childIndexKey\n   * @param opts\n   * @returns {Promise} -\n   */\n  unsetChild(uuid, childIndexKey, opts = {}) {\n    return new Promise((resolve, reject) => {\n      if(!uuid) return reject(`PyropeModel#unsetChild(): 'uuid' is undefined.`);\n      if(!childIndexKey || !isString(childIndexKey)) return reject(`PyropeModel#getChild(): 'childIndexKey' is undefined or not a string.`);\n    \n      childIndexKey = Inflector.underscore(Inflector.singularize(childIndexKey));\n  \n      const parentIndexKey = Inflector.underscore(Inflector.singularize(this.name));\n      const parentIndexValue = uuid;\n      const tableName = opts.table || this.buildAssociationTableName(childIndexKey);\n      \n      \n      pyrope.getAssociations({\n        tableName: tableName,\n        items: [\n          {index: {[parentIndexKey]: parentIndexValue}},\n          {index: childIndexKey}\n        ]\n      })\n        .then(associations => {\n          if(associations.length > 1) {\n            reject(`PyropeModel#unsetChild(): Expected only one association.`);\n          } else if(associations.length === 0) {\n            return Promise.resolve(true);\n          } else {\n            return Promise.resolve(associations[0]);\n          }\n        })\n        .then(assoc => {\n          if(assoc === true) {\n            return Promise.resolve(assoc);\n          } else {\n            return pyrope.dissociate({\n              tableName: tableName,\n              items: [\n                {index: {[parentIndexKey]: parentIndexValue}},\n                {index: {[childIndexKey]: assoc}}\n              ]\n            })\n          }\n        })\n        .then((res) => resolve(res))\n        .catch(err => reject(`PyropeModel#unsetChild(): ${err}`))\n    });\n  };\n  \n  getChildren() {\n    \n  }\n  \n  setChildren() {\n    \n  }\n  \n  unsetChildren() {\n    \n  }\n}"
+  },
+  {
+    "__docId__": 30,
+    "kind": "class",
+    "static": true,
+    "variation": null,
+    "name": "PyropeModel",
+    "memberof": "lib/models.js",
+    "longname": "lib/models.js~PyropeModel",
+    "access": null,
+    "export": true,
+    "importPath": "pyrope/lib/models.js",
+    "importStyle": "PyropeModel",
+    "description": "Pyrope Model ORM",
+    "lineNumber": 9,
+    "interface": false
+  },
+  {
+    "__docId__": 31,
+    "kind": "constructor",
+    "static": false,
+    "variation": null,
+    "name": "constructor",
+    "memberof": "lib/models.js~PyropeModel",
+    "longname": "lib/models.js~PyropeModel#constructor",
+    "access": null,
+    "description": "PyropeModel#constructor",
+    "lineNumber": 28,
+    "params": [
+      {
+        "nullable": null,
+        "types": [
+          "GraphQLObjectType"
+        ],
+        "spread": false,
+        "optional": false,
+        "name": "schema",
+        "description": "The model schema."
+      },
+      {
+        "nullable": null,
+        "types": [
+          "object"
+        ],
+        "spread": false,
+        "optional": false,
+        "name": "opts",
+        "description": "The options object."
+      },
+      {
+        "nullable": null,
+        "types": [
+          "string"
+        ],
+        "spread": false,
+        "optional": false,
+        "name": "opts.name",
+        "description": "Custom name."
+      },
+      {
+        "nullable": null,
+        "types": [
+          "string"
+        ],
+        "spread": false,
+        "optional": false,
+        "name": "opts.humanName",
+        "description": "Custom human name (for errors)."
+      },
+      {
+        "nullable": null,
+        "types": [
+          "string"
+        ],
+        "spread": false,
+        "optional": false,
+        "name": "opts.table",
+        "description": "Custom table to query from."
+      },
+      {
+        "nullable": null,
+        "types": [
+          "string"
+        ],
+        "spread": false,
+        "optional": false,
+        "name": "opts.defaultQueryKey",
+        "description": "Custom default query key."
+      },
+      {
+        "nullable": null,
+        "types": [
+          "function(fields: object, fieldName: string)"
+        ],
+        "spread": false,
+        "optional": false,
+        "name": "opts.validations",
+        "description": "Validation function."
+      }
+    ],
+    "generator": false
+  },
+  {
+    "__docId__": 32,
+    "kind": "member",
+    "static": false,
+    "variation": null,
+    "name": "name",
+    "memberof": "lib/models.js~PyropeModel",
+    "longname": "lib/models.js~PyropeModel#name",
+    "access": null,
+    "description": null,
+    "lineNumber": 33,
+    "undocument": true,
+    "type": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 33,
+    "kind": "member",
+    "static": false,
+    "variation": null,
+    "name": "humanName",
+    "memberof": "lib/models.js~PyropeModel",
+    "longname": "lib/models.js~PyropeModel#humanName",
+    "access": null,
+    "description": null,
+    "lineNumber": 34,
+    "undocument": true,
+    "type": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 34,
+    "kind": "member",
+    "static": false,
+    "variation": null,
+    "name": "table",
+    "memberof": "lib/models.js~PyropeModel",
+    "longname": "lib/models.js~PyropeModel#table",
+    "access": null,
+    "description": null,
+    "lineNumber": 35,
+    "undocument": true,
+    "type": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 35,
+    "kind": "member",
+    "static": false,
+    "variation": null,
+    "name": "fields",
+    "memberof": "lib/models.js~PyropeModel",
+    "longname": "lib/models.js~PyropeModel#fields",
+    "access": null,
+    "description": null,
+    "lineNumber": 36,
+    "undocument": true,
+    "type": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 36,
+    "kind": "member",
+    "static": false,
+    "variation": null,
+    "name": "defaultQueryKey",
+    "memberof": "lib/models.js~PyropeModel",
+    "longname": "lib/models.js~PyropeModel#defaultQueryKey",
+    "access": null,
+    "description": null,
+    "lineNumber": 37,
+    "undocument": true,
+    "type": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 37,
+    "kind": "member",
+    "static": false,
+    "variation": null,
+    "name": "validations",
+    "memberof": "lib/models.js~PyropeModel",
+    "longname": "lib/models.js~PyropeModel#validations",
+    "access": null,
+    "description": null,
+    "lineNumber": 38,
+    "undocument": true,
+    "type": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 38,
+    "kind": "method",
+    "static": false,
+    "variation": null,
+    "name": "get",
+    "memberof": "lib/models.js~PyropeModel",
+    "longname": "lib/models.js~PyropeModel#get",
+    "access": null,
+    "description": "Retrieve a record given an index",
+    "lineNumber": 49,
+    "unknown": [
+      {
+        "tagName": "@returns",
+        "tagValue": "{Promise<Map, Promise.reject>} - The retrieved record map. Rejects if record is not found."
+      }
+    ],
+    "params": [
+      {
+        "nullable": null,
+        "types": [
+          "object"
+        ],
+        "spread": false,
+        "optional": false,
+        "name": "index",
+        "description": "The index used to find the record."
+      },
+      {
+        "nullable": null,
+        "types": [
+          "string"
+        ],
+        "spread": false,
+        "optional": false,
+        "name": "index.key",
+        "description": "The index key used to query the record."
+      },
+      {
+        "nullable": null,
+        "types": [
+          "string"
+        ],
+        "spread": false,
+        "optional": false,
+        "name": "index.value",
+        "description": "The index value used to query the record."
+      }
+    ],
+    "return": {
+      "nullable": null,
+      "types": [
+        "Promise<Map, Promise.reject>"
+      ],
+      "spread": false,
+      "description": "The retrieved record map. Rejects if record is not found."
+    },
+    "generator": false
+  },
+  {
+    "__docId__": 39,
+    "kind": "method",
+    "static": false,
+    "variation": null,
+    "name": "getAll",
+    "memberof": "lib/models.js~PyropeModel",
+    "longname": "lib/models.js~PyropeModel#getAll",
+    "access": null,
+    "description": "Get all records",
+    "lineNumber": 78,
+    "unknown": [
+      {
+        "tagName": "@returns",
+        "tagValue": "{Promise<Array>} - An array with the maps of the retrieved objects. Empty array if none is found."
+      }
+    ],
+    "params": [
+      {
+        "nullable": null,
+        "types": [
+          "object"
+        ],
+        "spread": false,
+        "optional": false,
+        "name": "opts",
+        "description": "Options object."
+      },
+      {
+        "nullable": null,
+        "types": [
+          "string"
+        ],
+        "spread": false,
+        "optional": false,
+        "name": "opts.ascending",
+        "description": "Options object."
+      },
+      {
+        "nullable": null,
+        "types": [
+          "number"
+        ],
+        "spread": false,
+        "optional": false,
+        "name": "opts.limit",
+        "description": "The amount of records to retrieve."
+      },
+      {
+        "nullable": null,
+        "types": [
+          "string"
+        ],
+        "spread": false,
+        "optional": false,
+        "name": "opts.cursor",
+        "description": "The cursor from which the query continues."
+      }
+    ],
+    "return": {
+      "nullable": null,
+      "types": [
+        "Promise<Array>"
+      ],
+      "spread": false,
+      "description": "An array with the maps of the retrieved objects. Empty array if none is found."
+    },
+    "generator": false
+  },
+  {
+    "__docId__": 40,
+    "kind": "method",
+    "static": false,
+    "variation": null,
+    "name": "create",
+    "memberof": "lib/models.js~PyropeModel",
+    "longname": "lib/models.js~PyropeModel#create",
+    "access": null,
+    "description": "Create a record",
+    "lineNumber": 109,
+    "unknown": [
+      {
+        "tagName": "@returns",
+        "tagValue": "{Promise}"
+      }
+    ],
+    "params": [
+      {
+        "nullable": null,
+        "types": [
+          "*"
+        ],
+        "spread": false,
+        "optional": false,
+        "name": "opts",
+        "description": ""
+      }
+    ],
+    "return": {
+      "nullable": null,
+      "types": [
+        "Promise"
+      ],
+      "spread": false,
+      "description": ""
+    },
+    "generator": false
+  },
+  {
+    "__docId__": 41,
+    "kind": "method",
+    "static": false,
+    "variation": null,
+    "name": "update",
+    "memberof": "lib/models.js~PyropeModel",
+    "longname": "lib/models.js~PyropeModel#update",
+    "access": null,
+    "description": null,
+    "lineNumber": 156,
+    "undocument": true,
+    "params": [
+      {
+        "name": "index",
+        "types": [
+          "*"
+        ]
+      },
+      {
+        "name": "fields",
+        "optional": true,
+        "types": [
+          "{}"
+        ],
+        "defaultRaw": {},
+        "defaultValue": "{}"
+      },
+      {
+        "name": "opts",
+        "optional": true,
+        "types": [
+          "{}"
+        ],
+        "defaultRaw": {},
+        "defaultValue": "{}"
+      }
+    ],
+    "return": {
+      "types": [
+        "*"
+      ]
+    },
+    "generator": false
+  },
+  {
+    "__docId__": 42,
+    "kind": "method",
+    "static": false,
+    "variation": null,
+    "name": "destroy",
+    "memberof": "lib/models.js~PyropeModel",
+    "longname": "lib/models.js~PyropeModel#destroy",
+    "access": null,
+    "description": null,
+    "lineNumber": 207,
+    "undocument": true,
+    "params": [
+      {
+        "name": "index",
+        "types": [
+          "*"
+        ]
+      },
+      {
+        "name": "opts",
+        "optional": true,
+        "types": [
+          "{}"
+        ],
+        "defaultRaw": {},
+        "defaultValue": "{}"
+      }
+    ],
+    "return": {
+      "types": [
+        "*"
+      ]
+    },
+    "generator": false
+  },
+  {
+    "__docId__": 43,
+    "kind": "method",
+    "static": false,
+    "variation": null,
+    "name": "getChild",
+    "memberof": "lib/models.js~PyropeModel",
+    "longname": "lib/models.js~PyropeModel#getChild",
+    "access": null,
+    "description": "Get a child (1:1)",
+    "lineNumber": 261,
+    "unknown": [
+      {
+        "tagName": "@returns",
+        "tagValue": "{Promise<Map, null>} - null if not found"
+      }
+    ],
+    "params": [
+      {
+        "nullable": null,
+        "types": [
+          "string"
+        ],
+        "spread": false,
+        "optional": false,
+        "name": "uuid",
+        "description": "The index value to query the parent."
+      },
+      {
+        "nullable": null,
+        "types": [
+          "string"
+        ],
+        "spread": false,
+        "optional": false,
+        "name": "childIndexKey",
+        "description": "The index key used to query the child."
+      },
+      {
+        "nullable": null,
+        "types": [
+          "function(source: object)"
+        ],
+        "spread": false,
+        "optional": false,
+        "name": "childResolver",
+        "description": "Resolver function."
+      },
+      {
+        "nullable": null,
+        "types": [
+          "object"
+        ],
+        "spread": false,
+        "optional": false,
+        "name": "opts",
+        "description": "The options object."
+      },
+      {
+        "nullable": null,
+        "types": [
+          "string"
+        ],
+        "spread": false,
+        "optional": false,
+        "name": "opts.table",
+        "description": "Custom association table to query from."
+      }
+    ],
+    "return": {
+      "nullable": null,
+      "types": [
+        "Promise<Map, null>"
+      ],
+      "spread": false,
+      "description": "null if not found"
+    },
+    "generator": false
+  },
+  {
+    "__docId__": 44,
+    "kind": "method",
+    "static": false,
+    "variation": null,
+    "name": "buildItemIndices",
+    "memberof": "lib/models.js~PyropeModel",
+    "longname": "lib/models.js~PyropeModel#buildItemIndices",
+    "access": null,
+    "description": null,
+    "lineNumber": 292,
+    "undocument": true,
+    "params": [
+      {
+        "name": "uuid",
+        "types": [
+          "*"
+        ]
+      },
+      {
+        "name": "childIndex",
+        "types": [
+          "*"
+        ]
+      }
+    ],
+    "return": {
+      "types": [
+        "*"
+      ]
+    },
+    "generator": false
+  },
+  {
+    "__docId__": 45,
+    "kind": "method",
+    "static": false,
+    "variation": null,
+    "name": "buildAssociationTableName",
+    "memberof": "lib/models.js~PyropeModel",
+    "longname": "lib/models.js~PyropeModel#buildAssociationTableName",
+    "access": null,
+    "description": null,
+    "lineNumber": 328,
+    "undocument": true,
+    "params": [
+      {
+        "name": "associationKey",
+        "types": [
+          "*"
+        ]
+      }
+    ],
+    "return": {
+      "types": [
+        "*"
+      ]
+    },
+    "generator": false
+  },
+  {
+    "__docId__": 46,
+    "kind": "method",
+    "static": false,
+    "variation": null,
+    "name": "setChild",
+    "memberof": "lib/models.js~PyropeModel",
+    "longname": "lib/models.js~PyropeModel#setChild",
+    "access": null,
+    "description": "",
+    "lineNumber": 339,
+    "unknown": [
+      {
+        "tagName": "@returns",
+        "tagValue": "{Promise}"
+      }
+    ],
+    "params": [
+      {
+        "nullable": null,
+        "types": [
+          "*"
+        ],
+        "spread": false,
+        "optional": false,
+        "name": "uuid",
+        "description": ""
+      },
+      {
+        "nullable": null,
+        "types": [
+          "*"
+        ],
+        "spread": false,
+        "optional": false,
+        "name": "childIndex",
+        "description": ""
+      },
+      {
+        "nullable": null,
+        "types": [
+          "*"
+        ],
+        "spread": false,
+        "optional": false,
+        "name": "opts",
+        "description": ""
+      }
+    ],
+    "return": {
+      "nullable": null,
+      "types": [
+        "Promise"
+      ],
+      "spread": false,
+      "description": ""
+    },
+    "generator": false
+  },
+  {
+    "__docId__": 47,
+    "kind": "method",
+    "static": false,
+    "variation": null,
+    "name": "unsetChild",
+    "memberof": "lib/models.js~PyropeModel",
+    "longname": "lib/models.js~PyropeModel#unsetChild",
+    "access": null,
+    "description": "",
+    "lineNumber": 370,
+    "unknown": [
+      {
+        "tagName": "@returns",
+        "tagValue": "{Promise} -"
+      }
+    ],
+    "params": [
+      {
+        "nullable": null,
+        "types": [
+          "*"
+        ],
+        "spread": false,
+        "optional": false,
+        "name": "uuid",
+        "description": ""
+      },
+      {
+        "nullable": null,
+        "types": [
+          "*"
+        ],
+        "spread": false,
+        "optional": false,
+        "name": "childIndexKey",
+        "description": ""
+      },
+      {
+        "nullable": null,
+        "types": [
+          "*"
+        ],
+        "spread": false,
+        "optional": false,
+        "name": "opts",
+        "description": ""
+      }
+    ],
+    "return": {
+      "nullable": null,
+      "types": [
+        "Promise"
+      ],
+      "spread": false,
+      "description": ""
+    },
+    "generator": false
+  },
+  {
+    "__docId__": 48,
+    "kind": "method",
+    "static": false,
+    "variation": null,
+    "name": "getChildren",
+    "memberof": "lib/models.js~PyropeModel",
+    "longname": "lib/models.js~PyropeModel#getChildren",
+    "access": null,
+    "description": null,
+    "lineNumber": 416,
+    "undocument": true,
+    "params": [],
+    "generator": false
+  },
+  {
+    "__docId__": 49,
+    "kind": "method",
+    "static": false,
+    "variation": null,
+    "name": "setChildren",
+    "memberof": "lib/models.js~PyropeModel",
+    "longname": "lib/models.js~PyropeModel#setChildren",
+    "access": null,
+    "description": null,
+    "lineNumber": 420,
+    "undocument": true,
+    "params": [],
+    "generator": false
+  },
+  {
+    "__docId__": 50,
+    "kind": "method",
+    "static": false,
+    "variation": null,
+    "name": "unsetChildren",
+    "memberof": "lib/models.js~PyropeModel",
+    "longname": "lib/models.js~PyropeModel#unsetChildren",
+    "access": null,
+    "description": null,
+    "lineNumber": 424,
+    "undocument": true,
+    "params": [],
+    "generator": false
+  },
+  {
+    "__docId__": 51,
     "kind": "file",
     "static": true,
     "variation": null,
@@ -751,7 +1523,7 @@
     "content": "import { extend, omit, mapObject, isString, isFunction } from 'underscore';\nimport crypto from 'crypto';\n\n/**\n * Builds an UpdateExpression to use in 'params' using only the provided item fields.\n *\n * It makes the assumption that the HASH key is 'uuid' (and is excluded) and that every updated model has the attribute 'updatedAt'\n *\n * @param {object} args The item to update in the form {uuid: '123', field1: 'newValue', ...}\n * @param {function} fn(attrName, args) Callback function to filter the fields.\n *   The function has to return an object with the desired Name and Value in the form {name: 'value'}\n *   If null or undefined are returned, the field is ignored.\n * @return {object} An object to be merged in params, in the form\n *   {UpdateExpression, ExpressionAttributeNames, ExpressionAttributeValues}\n */\nexport const buildUpdateExpression = (args, hookFn) => new Promise((resolve, reject) => {\n  const mapExpression = (prevExpression, attrMap) => {\n    if (attrMap) {\n      const key = Object.keys(attrMap)[0];\n      const val = attrMap[key];\n    \n      return {...prevExpression, [key]: val};\n    } else {\n      return prevExpression;\n    }\n  };\n  \n  const fields = omit(args, 'uuid');\n  \n  iterateArrayOverPromise(Object.keys(fields), (attrName, prevExpression) => {\n    try { // hookFn is a promise\n      return hookFn(attrName, args)\n        .then(attrMap => mapExpression(prevExpression, attrMap))\n        .catch(err => Promise.reject(`hookFn(): ${err}`));\n    } catch(err) { // hookFn is a regular function\n      return Promise.resolve(mapExpression(prevExpression, hookFn(attrName, args)))\n    }\n  }, true).then(expression => {\n    if(!expression.updatedAt) expression.updatedAt = Number(new Date().getTime()); // Set updatedAt field in case it wasn't provided\n  \n    let updateExpressionArr = [];\n    let updateExpression;\n    let expressionAttributeNames = {};\n    let expressionAttributeValues = {};\n  \n    mapObject(expression, (val, key) => {\n      updateExpressionArr.push(`#${key} = :${key}`);\n      expressionAttributeNames[`#${key}`] = key;\n      expressionAttributeValues[`:${key}`] = val;\n    });\n  \n    updateExpression = `SET ${updateExpressionArr.join(', ')}`;\n  \n    resolve({\n      UpdateExpression: updateExpression,\n      ExpressionAttributeNames: expressionAttributeNames,\n      ExpressionAttributeValues: expressionAttributeValues,\n    });\n    \n  }).catch(err => reject(`buildUpdateExpression(): ${err}`));\n});\n\nexport const sha256 = (data) => {\n  if(!data || !isString(data)) throw new Error(`sha256(): Invalid value for data`);\n  \n  const hash = crypto.createHash('sha256');\n  \n  hash.update(data);\n  \n  return hash.digest('hex');\n};\n\nexport const genTableDigest = ( tableName ) => (sha256(tableName)+'.'+tableName);\n\n/**\n * Iterates a promise over each element of the array\n * If chaining is true, the resolved value is passed\n *  on to the promise of the following iteration\n *\n * Promise should have the signature (arg, prev)\n *  Where arg is the current iterated item from the array\n *  and prev is the previously resolved value.\n *\n * @param {Array} arr The array to iterate\n * @param {Function} fn The promise to use\n * @param {Boolean} chained Optional. Pass the resolved value on to the following iteration?\n * @result The resolved value of the last iteration. undefined if chained is false.\n * @todo: Substitute with Promise.each() ?\n * @todo: Check for possible bug when fn doesn't return a Promise\n */\nexport const iterateArrayOverPromise = (arr, fn, chained = false, index = 0, value = undefined) => {\n  if(index === arr.length) return Promise.resolve(value);\n  \n  return (chained ? fn(arr[index], value, index) : fn(arr[index], index))\n    .then(res => iterateArrayOverPromise(arr, fn, chained, ++index, chained ? res : undefined))\n    .catch(err => Promise.reject(`iterateArrayOverPromise(): ${err}`));\n};\n\nexport const buildAction = (type, prevUuidAction, prevItemAction, index) => {\n  const key = Object.keys(index)[0];\n  const val = index[key];\n  \n  let action = extend({}, prevItemAction, prevUuidAction);\n  \n  if(!action[type]) action[type] = {};\n  if(!action[type][key]) action[type][key] = [];\n  \n  action[type][key].push(val);\n  \n  return action;\n};"
   },
   {
-    "__docId__": 30,
+    "__docId__": 52,
     "kind": "variable",
     "static": true,
     "variation": null,
@@ -801,7 +1573,7 @@
     }
   },
   {
-    "__docId__": 31,
+    "__docId__": 53,
     "kind": "variable",
     "static": true,
     "variation": null,
@@ -822,7 +1594,7 @@
     }
   },
   {
-    "__docId__": 32,
+    "__docId__": 54,
     "kind": "variable",
     "static": true,
     "variation": null,
@@ -843,7 +1615,7 @@
     }
   },
   {
-    "__docId__": 33,
+    "__docId__": 55,
     "kind": "variable",
     "static": true,
     "variation": null,
@@ -901,7 +1673,7 @@
     }
   },
   {
-    "__docId__": 34,
+    "__docId__": 56,
     "kind": "variable",
     "static": true,
     "variation": null,
@@ -922,7 +1694,7 @@
     }
   },
   {
-    "__docId__": 36,
+    "__docId__": 58,
     "kind": "external",
     "static": true,
     "variation": null,
@@ -935,7 +1707,7 @@
     "builtinExternal": true
   },
   {
-    "__docId__": 37,
+    "__docId__": 59,
     "kind": "external",
     "static": true,
     "variation": null,
@@ -948,7 +1720,7 @@
     "builtinExternal": true
   },
   {
-    "__docId__": 38,
+    "__docId__": 60,
     "kind": "external",
     "static": true,
     "variation": null,
@@ -961,7 +1733,7 @@
     "builtinExternal": true
   },
   {
-    "__docId__": 39,
+    "__docId__": 61,
     "kind": "external",
     "static": true,
     "variation": null,
@@ -974,7 +1746,7 @@
     "builtinExternal": true
   },
   {
-    "__docId__": 40,
+    "__docId__": 62,
     "kind": "external",
     "static": true,
     "variation": null,
@@ -987,7 +1759,7 @@
     "builtinExternal": true
   },
   {
-    "__docId__": 41,
+    "__docId__": 63,
     "kind": "external",
     "static": true,
     "variation": null,
@@ -1000,7 +1772,7 @@
     "builtinExternal": true
   },
   {
-    "__docId__": 42,
+    "__docId__": 64,
     "kind": "external",
     "static": true,
     "variation": null,
@@ -1013,7 +1785,7 @@
     "builtinExternal": true
   },
   {
-    "__docId__": 43,
+    "__docId__": 65,
     "kind": "external",
     "static": true,
     "variation": null,
@@ -1026,7 +1798,7 @@
     "builtinExternal": true
   },
   {
-    "__docId__": 44,
+    "__docId__": 66,
     "kind": "external",
     "static": true,
     "variation": null,
@@ -1039,7 +1811,7 @@
     "builtinExternal": true
   },
   {
-    "__docId__": 45,
+    "__docId__": 67,
     "kind": "external",
     "static": true,
     "variation": null,
@@ -1052,7 +1824,7 @@
     "builtinExternal": true
   },
   {
-    "__docId__": 46,
+    "__docId__": 68,
     "kind": "external",
     "static": true,
     "variation": null,
@@ -1065,7 +1837,7 @@
     "builtinExternal": true
   },
   {
-    "__docId__": 47,
+    "__docId__": 69,
     "kind": "external",
     "static": true,
     "variation": null,
@@ -1078,7 +1850,7 @@
     "builtinExternal": true
   },
   {
-    "__docId__": 48,
+    "__docId__": 70,
     "kind": "external",
     "static": true,
     "variation": null,
@@ -1091,7 +1863,7 @@
     "builtinExternal": true
   },
   {
-    "__docId__": 49,
+    "__docId__": 71,
     "kind": "external",
     "static": true,
     "variation": null,
@@ -1104,7 +1876,7 @@
     "builtinExternal": true
   },
   {
-    "__docId__": 50,
+    "__docId__": 72,
     "kind": "external",
     "static": true,
     "variation": null,
@@ -1117,7 +1889,7 @@
     "builtinExternal": true
   },
   {
-    "__docId__": 51,
+    "__docId__": 73,
     "kind": "external",
     "static": true,
     "variation": null,
@@ -1130,7 +1902,7 @@
     "builtinExternal": true
   },
   {
-    "__docId__": 52,
+    "__docId__": 74,
     "kind": "external",
     "static": true,
     "variation": null,
@@ -1143,7 +1915,7 @@
     "builtinExternal": true
   },
   {
-    "__docId__": 53,
+    "__docId__": 75,
     "kind": "external",
     "static": true,
     "variation": null,
@@ -1156,7 +1928,7 @@
     "builtinExternal": true
   },
   {
-    "__docId__": 54,
+    "__docId__": 76,
     "kind": "external",
     "static": true,
     "variation": null,
@@ -1169,7 +1941,7 @@
     "builtinExternal": true
   },
   {
-    "__docId__": 55,
+    "__docId__": 77,
     "kind": "external",
     "static": true,
     "variation": null,
@@ -1182,7 +1954,7 @@
     "builtinExternal": true
   },
   {
-    "__docId__": 56,
+    "__docId__": 78,
     "kind": "external",
     "static": true,
     "variation": null,
@@ -1195,7 +1967,7 @@
     "builtinExternal": true
   },
   {
-    "__docId__": 57,
+    "__docId__": 79,
     "kind": "external",
     "static": true,
     "variation": null,
@@ -1208,7 +1980,7 @@
     "builtinExternal": true
   },
   {
-    "__docId__": 58,
+    "__docId__": 80,
     "kind": "external",
     "static": true,
     "variation": null,
@@ -1221,7 +1993,7 @@
     "builtinExternal": true
   },
   {
-    "__docId__": 59,
+    "__docId__": 81,
     "kind": "external",
     "static": true,
     "variation": null,
@@ -1234,7 +2006,7 @@
     "builtinExternal": true
   },
   {
-    "__docId__": 60,
+    "__docId__": 82,
     "kind": "external",
     "static": true,
     "variation": null,
@@ -1247,7 +2019,7 @@
     "builtinExternal": true
   },
   {
-    "__docId__": 61,
+    "__docId__": 83,
     "kind": "external",
     "static": true,
     "variation": null,
@@ -1260,7 +2032,7 @@
     "builtinExternal": true
   },
   {
-    "__docId__": 62,
+    "__docId__": 84,
     "kind": "external",
     "static": true,
     "variation": null,
@@ -1273,7 +2045,7 @@
     "builtinExternal": true
   },
   {
-    "__docId__": 63,
+    "__docId__": 85,
     "kind": "external",
     "static": true,
     "variation": null,
@@ -1286,7 +2058,7 @@
     "builtinExternal": true
   },
   {
-    "__docId__": 64,
+    "__docId__": 86,
     "kind": "external",
     "static": true,
     "variation": null,
@@ -1299,7 +2071,7 @@
     "builtinExternal": true
   },
   {
-    "__docId__": 65,
+    "__docId__": 87,
     "kind": "external",
     "static": true,
     "variation": null,
@@ -1312,7 +2084,7 @@
     "builtinExternal": true
   },
   {
-    "__docId__": 66,
+    "__docId__": 88,
     "kind": "external",
     "static": true,
     "variation": null,
@@ -1325,7 +2097,7 @@
     "builtinExternal": true
   },
   {
-    "__docId__": 67,
+    "__docId__": 89,
     "kind": "external",
     "static": true,
     "variation": null,
@@ -1338,7 +2110,7 @@
     "builtinExternal": true
   },
   {
-    "__docId__": 68,
+    "__docId__": 90,
     "kind": "external",
     "static": true,
     "variation": null,
@@ -1351,7 +2123,7 @@
     "builtinExternal": true
   },
   {
-    "__docId__": 69,
+    "__docId__": 91,
     "kind": "external",
     "static": true,
     "variation": null,
@@ -1364,7 +2136,7 @@
     "builtinExternal": true
   },
   {
-    "__docId__": 70,
+    "__docId__": 92,
     "kind": "external",
     "static": true,
     "variation": null,
@@ -1377,7 +2149,7 @@
     "builtinExternal": true
   },
   {
-    "__docId__": 71,
+    "__docId__": 93,
     "kind": "external",
     "static": true,
     "variation": null,
@@ -1390,7 +2162,7 @@
     "builtinExternal": true
   },
   {
-    "__docId__": 72,
+    "__docId__": 94,
     "kind": "external",
     "static": true,
     "variation": null,
@@ -1403,7 +2175,7 @@
     "builtinExternal": true
   },
   {
-    "__docId__": 73,
+    "__docId__": 95,
     "kind": "external",
     "static": true,
     "variation": null,
@@ -1416,7 +2188,7 @@
     "builtinExternal": true
   },
   {
-    "__docId__": 74,
+    "__docId__": 96,
     "kind": "external",
     "static": true,
     "variation": null,
@@ -1429,7 +2201,7 @@
     "builtinExternal": true
   },
   {
-    "__docId__": 75,
+    "__docId__": 97,
     "kind": "external",
     "static": true,
     "variation": null,
@@ -1442,7 +2214,7 @@
     "builtinExternal": true
   },
   {
-    "__docId__": 76,
+    "__docId__": 98,
     "kind": "external",
     "static": true,
     "variation": null,
@@ -1455,7 +2227,7 @@
     "builtinExternal": true
   },
   {
-    "__docId__": 77,
+    "__docId__": 99,
     "kind": "external",
     "static": true,
     "variation": null,
@@ -1468,7 +2240,7 @@
     "builtinExternal": true
   },
   {
-    "__docId__": 78,
+    "__docId__": 100,
     "kind": "external",
     "static": true,
     "variation": null,
@@ -1481,7 +2253,7 @@
     "builtinExternal": true
   },
   {
-    "__docId__": 79,
+    "__docId__": 101,
     "kind": "external",
     "static": true,
     "variation": null,
@@ -1494,7 +2266,7 @@
     "builtinExternal": true
   },
   {
-    "__docId__": 80,
+    "__docId__": 102,
     "kind": "external",
     "static": true,
     "variation": null,
@@ -1507,7 +2279,7 @@
     "builtinExternal": true
   },
   {
-    "__docId__": 81,
+    "__docId__": 103,
     "kind": "external",
     "static": true,
     "variation": null,
@@ -1520,7 +2292,7 @@
     "builtinExternal": true
   },
   {
-    "__docId__": 82,
+    "__docId__": 104,
     "kind": "external",
     "static": true,
     "variation": null,
@@ -1533,7 +2305,7 @@
     "builtinExternal": true
   },
   {
-    "__docId__": 84,
+    "__docId__": 106,
     "kind": "external",
     "static": true,
     "variation": null,
@@ -1546,7 +2318,7 @@
     "builtinExternal": true
   },
   {
-    "__docId__": 85,
+    "__docId__": 107,
     "kind": "external",
     "static": true,
     "variation": null,
@@ -1559,7 +2331,7 @@
     "builtinExternal": true
   },
   {
-    "__docId__": 86,
+    "__docId__": 108,
     "kind": "external",
     "static": true,
     "variation": null,
@@ -1572,7 +2344,7 @@
     "builtinExternal": true
   },
   {
-    "__docId__": 87,
+    "__docId__": 109,
     "kind": "external",
     "static": true,
     "variation": null,
@@ -1585,7 +2357,7 @@
     "builtinExternal": true
   },
   {
-    "__docId__": 88,
+    "__docId__": 110,
     "kind": "external",
     "static": true,
     "variation": null,
@@ -1598,7 +2370,7 @@
     "builtinExternal": true
   },
   {
-    "__docId__": 89,
+    "__docId__": 111,
     "kind": "external",
     "static": true,
     "variation": null,
@@ -1611,7 +2383,7 @@
     "builtinExternal": true
   },
   {
-    "__docId__": 90,
+    "__docId__": 112,
     "kind": "external",
     "static": true,
     "variation": null,
@@ -1624,7 +2396,7 @@
     "builtinExternal": true
   },
   {
-    "__docId__": 91,
+    "__docId__": 113,
     "kind": "external",
     "static": true,
     "variation": null,

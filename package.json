@@ -71,7 +71,7 @@
       "path": "node_modules/cz-conventional-changelog"
     },
     "ghooks": {
-      "pre-push": "npm run cover"
+      "pre-push": "npm run cover  "
     }
   }
 }

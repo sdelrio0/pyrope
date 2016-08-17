@@ -32,7 +32,7 @@ describe.only('Model', function() {
   let c1, c2, c3; // contact
   let o1, o2, o3; // org
   let p1, p2, p3; // operation
-  let t1, t2, t3; // transaction
+  let t1, t2, t3, t4, t5, t6, t7; // transaction
   
   let cursor;
   
@@ -52,6 +52,10 @@ describe.only('Model', function() {
     .then(() => createTransaction({}).then(u => t1 = u))
     .then(() => createTransaction({}).then(u => t2 = u))
     .then(() => createTransaction({}).then(u => t3 = u))
+    .then(() => createTransaction({}).then(u => t4 = u))
+    .then(() => createTransaction({}).then(u => t5 = u))
+    .then(() => createTransaction({}).then(u => t6 = u))
+    .then(() => createTransaction({}).then(u => t7 = u))
   );
   
   describe('constructor()', function() {
@@ -489,67 +493,249 @@ describe.only('Model', function() {
     });
   
     describe('1:N', function() {
-      xdescribe('setChildren(p1, t1)', function() {
-    
+      describe('Associations', function() {
+        it('scalar - setChildren(p1, t1)', () => new Promise((resolve, reject) => {
+          Operation.setChildren(p1.uuid, {transactions: t1.uuid}, {table: '_test_operations_transactions'})
+            .then(res => {
+              resolve(expect(res).to.equal(true))
+            })
+            .catch(err => reject(err));
+        }));
+  
+        it('checks getChildren(p1, transaction) == [t1]', () => new Promise((resolve, reject) => {
+          Operation.getChildren(p1.uuid, 'transaction', operationResolvers.getTransaction, {table: '_test_operations_transactions'})
+            .then(res => {
+              resolve(Promise.all([
+                expect(res).to.be.an('array').of.length(1),
+                expect(res[0]).to.have.property('uuid', t1.uuid),
+                expect(res[0]).to.have.property('uuid', t1.uuid),
+              ]))
+            })
+            .catch(err => reject(err));
+        }));
+  
+        it('array - setChildren(p1, [t2, t3])', () => new Promise((resolve, reject) => {
+          Operation.setChildren(p1.uuid, {transactions: [t2.uuid, t3.uuid]}, {table: '_test_operations_transactions'})
+            .then(res => {
+              resolve(expect(res).to.equal(true))
+            })
+            .catch(err => reject(err));
+        }));
+  
+        it('checks getChildren(p1, transaction) == [t1, t2, t3]', () => new Promise((resolve, reject) => {
+          Operation.getChildren(p1.uuid, 'transaction', operationResolvers.getTransaction, {table: '_test_operations_transactions'})
+            .then(res => {
+              resolve(Promise.all([
+                expect(res).to.be.an('array').of.length(3),
+                expect(res[0]).to.have.property('uuid', t1.uuid),
+                expect(res[1]).to.have.property('uuid', t2.uuid),
+                expect(res[2]).to.have.property('uuid', t3.uuid),
+              ]))
+            })
+            .catch(err => reject(err));
+        }));
+  
+        it('checks that association table count === 3', () => new Promise((resolve, reject) => {
+          pyrope.count({tableName: '_test_operations_transactions'})
+            .then(res => resolve(Promise.all([
+              expect(res).to.equal(3)
+            ])))
+            .catch(err => reject(err));
+        }));
       });
   
-      xdescribe('getChildren(p1, \'transaction\')', function() {
+      describe('Reassociations', function() {
+        it('scalar - setChild(t1, p2)', () => new Promise((resolve, reject) => {
+          Transaction.setChild(t1.uuid, {operation: p2.uuid}, {table: '_test_operations_transactions'})
+            .then(res => {
+              resolve(expect(res).to.equal(true))
+            })
+            .catch(err => reject(err));
+        }));
     
-      });
+        it('checks getChildren(p1, transaction) == [t2, t3]', () => new Promise((resolve, reject) => {
+          Operation.getChildren(p1.uuid, 'transaction', operationResolvers.getTransaction,  {table: '_test_operations_transactions'})
+            .then(res => {
+              resolve(Promise.all([
+                expect(res).to.be.an('array').of.length(2),
+                expect(res[0]).to.have.property('uuid', t2.uuid),
+                expect(res[1]).to.have.property('uuid', t3.uuid),
+              ]))
+            })
+            .catch(err => reject(err));
+        }));
   
-      xdescribe('setChildren(p1, [t2, t3]', function() {
-    
-      });
+        it('checks getChild(t1, operation) == p2', () => new Promise((resolve, reject) => {
+          Transaction.getChild(t1.uuid, 'operation', transactionResolvers.getOperation, {table: '_test_operations_transactions'})
+            .then(res => {
+              resolve(Promise.all([
+                expect(res).to.have.property('uuid', p2.uuid),
+              ]))
+            })
+            .catch(err => reject(err));
+        }));
   
-      xdescribe('getChildren(p1, \'transaction\')', function() {
+        it('checks getChildren(p2, transaction) == [t1]', () => new Promise((resolve, reject) => {
+          Operation.getChildren(p2.uuid, 'transaction', operationResolvers.getTransaction, {table: '_test_operations_transactions'})
+            .then(res => {
+              resolve(Promise.all([
+                expect(res).to.be.an('array').of.length(1),
+                expect(res[0]).to.have.property('uuid', t1.uuid),
+              ]))
+            })
+            .catch(err => reject(err));
+        }));
     
+        it('*rejects: array - setChildren(t2, [p2, p3])', () => new Promise((resolve, reject) => {
+          Transaction.setChildren(t2.uuid, {operation: [p2.uuid, p3.uuid]}, {table: '_test_operations_transactions'})
+            .then(res => reject(`Expected rejection`))
+            .catch(err => resolve());
+        }));
+    
+        it('checks that association table count === 3', () => new Promise((resolve, reject) => {
+          pyrope.count({tableName: '_test_operations_transactions'})
+            .then(res => resolve(Promise.all([
+              expect(res).to.equal(3)
+            ])))
+            .catch(err => reject(err));
+        }));
       });
+      
+      /*
+       *  uuid  | operation | transaction
+       *  0     | p1        | t2
+       *  1     | p1        | t3
+       *  2     |  p2       |  t1
+       *  >3    | p1        | t4
+       *  >4    | p1        | t5
+       *  >5    | p1        | t6
+       *  >6    |  p2       |  t7
+       */
+      
+      describe('Dissociations', function() {
+        it('p1 << [t4, t5, t6], p2 << t7', () => new Promise((resolve, reject) => {
+          Operation.setChildren(p1.uuid, {transactions: [t4.uuid, t5.uuid, t6.uuid]}, {table: '_test_operations_transactions'})
+            .then(() => Operation.setChildren(p2.uuid, {transaction: t7.uuid}, {table: '_test_operations_transactions'}))
+            .then(() => resolve())
+            .catch(err => reject(err));
+        }));
   
-      xdescribe('setChildren(p2, t1)', function() {
-    
-      });
+        it('rejects if is not associated - unsetChildren(p1, t1)', () => new Promise((resolve, reject) => {
+          Operation.unsetChildren(p1.uuid, {transaction: t1.uuid}, {table: '_test_operations_transactions'})
+            .then((res) => reject(`Expected rejection, got: ${JSON.stringify(res, null, 2)}`))
+            .catch((err) => resolve());
+        }));
+        
+        it('array - unsetChildren(p1, t2)', () => new Promise((resolve, reject) => {
+          Operation.unsetChildren(p1.uuid, {transaction: t2.uuid}, {table: '_test_operations_transactions'})
+            .then(res => {
+              resolve(expect(res).to.equal(true))
+            })
+            .catch(err => reject(err));
+        }));
   
-      xdescribe('getChildren(p1, \'transaction\')', function() {
-    
-      });
+        it('checks getChildren(p1, transaction) == [t3, t4, t5, t6]', () => new Promise((resolve, reject) => {
+          Operation.getChildren(p1.uuid, 'transaction', operationResolvers.getTransaction, {table: '_test_operations_transactions'})
+            .then(res => {
+              resolve(Promise.all([
+                expect(res).to.be.an('array').of.length(4),
+                expect(res[0]).to.have.property('uuid', t3.uuid),
+                expect(res[1]).to.have.property('uuid', t4.uuid),
+                expect(res[2]).to.have.property('uuid', t5.uuid),
+                expect(res[3]).to.have.property('uuid', t6.uuid),
+              ]))
+            })
+            .catch(err => reject(err));
+        }));
   
-      xdescribe('getChildren(p2, \'transaction\')', function() {
-    
-      });
+        it('array - unsetChildren(p1, [t3, t4])', () => new Promise((resolve, reject) => {
+          Operation.unsetChildren(p1.uuid, {transactions: [t3.uuid, t4.uuid]}, {table: '_test_operations_transactions'})
+            .then(res => {
+              resolve(expect(res).to.equal(true))
+            })
+            .catch(err => reject(err));
+        }));
   
-      xdescribe('getChildren(p1, \'transaction\')', function() {
-    
-      });
+        it('checks getChildren(p1, transaction) == [t5, t6]', () => new Promise((resolve, reject) => {
+          Operation.getChildren(p1.uuid, 'transaction', operationResolvers.getTransaction, {table: '_test_operations_transactions'})
+            .then(res => {
+              resolve(Promise.all([
+                expect(res).to.be.an('array').of.length(2),
+                expect(res[0]).to.have.property('uuid', t5.uuid),
+                expect(res[1]).to.have.property('uuid', t6.uuid),
+              ]))
+            })
+            .catch(err => reject(err));
+        }));
   
-      xdescribe('getChildren(p2, \'transaction\')', function() {
-    
-      });
+        it('array - unsetChildren(p1, transaction)', () => new Promise((resolve, reject) => {
+          Operation.unsetChildren(p1.uuid, {transactions: null}, {table: '_test_operations_transactions'})
+            .then(res => {
+              resolve(expect(res).to.equal(true))
+            })
+            .catch(err => reject(err));
+        }));
   
-      xdescribe('setChildren(p2, [t2, t3])', function() {
-    
+        it('checks getChildren(p1, transaction) == []', () => new Promise((resolve, reject) => {
+          Operation.getChildren(p1.uuid, 'transactions', operationResolvers.getTransaction, {table: '_test_operations_transactions'})
+            .then(res => {
+              resolve(Promise.all([
+                expect(res).to.be.an('array'),
+                expect(res).to.have.lengthOf(0),
+              ]))
+            })
+            .catch(err => reject(err));
+        }));
+  
+        it('scalar - unsetChild(t1, operation)', () => new Promise((resolve, reject) => {
+          Transaction.unsetChild(t1.uuid, 'operation', {table: '_test_operations_transactions'})
+            .then(res => {
+              resolve(expect(res).to.equal(true))
+            })
+            .catch(err => reject(err));
+        }));
+  
+        it('checks getChild(t1, operation) == null', () => new Promise((resolve, reject) => {
+          Transaction.getChild(t1.uuid, 'operation', transactionResolvers.getOperation, {table: '_test_operations_transactions'})
+            .then(res => {
+              resolve(Promise.all([
+                expect(res).to.equal(null),
+              ]))
+            })
+            .catch(err => reject(err));
+        }));
+  
+        it('checks getChildren(p2, transaction) == [t7]', () => new Promise((resolve, reject) => {
+          Operation.getChildren(p2.uuid, 'transaction', operationResolvers.getTransaction, {table: '_test_operations_transactions'})
+            .then(res => {
+              resolve(Promise.all([
+                expect(res).to.be.an('array').of.length(1),
+                expect(res[0]).to.have.property('uuid', t7.uuid),
+              ]))
+            })
+            .catch(err => reject(err));
+        }));
+  
+        it('array - unsetChildren(p2, transaction)', () => new Promise((resolve, reject) => {
+          Operation.unsetChildren(p2.uuid, {transactions: null}, {table: '_test_operations_transactions'})
+            .then(res => {
+              resolve(expect(res).to.equal(true))
+            })
+            .catch(err => reject(err));
+        }));
+        
+        it('checks that association table count === 0', () => new Promise((resolve, reject) => {
+          pyrope.count({tableName: '_test_operations_transactions'})
+            .then(res => resolve(Promise.all([
+              expect(res).to.equal(0)
+            ])))
+            .catch(err => reject(err));
+        }));
       });
     });
   
     xdescribe('1:N', function() {
-      xdescribe('setChildren(o1, c1)', function() {
-    
-      });
-  
-      xdescribe('getChildren(o1, \'contact\')', function() {
-    
-      });
-  
-      xdescribe('setChildren(o1, [c2, c3])', function() {
-    
-      });
-  
-      xdescribe('getChildren(o1, \'contact\')', function() {
-    
-      });
-  
-      xdescribe('', function() {
-    
-      });
+      
     });
   });
 });

@@ -40,7 +40,7 @@ Use the PyropeModel instance in your resolvers in order to perform Queries and M
 
 Documentation
 =============
-Check the ES6Docs [here](https://doc.esdoc.org/github.com/sdelrio0/pyrope) and the [tests](https://github.com/sdelrio0/pyrope/tree/master/__tests__).
+Check the ES6Docs [here](https://doc.esdoc.org/github.com/sdelrio0/pyrope), the [API](https://doc.esdoc.org/github.com/sdelrio0/pyrope/class/lib/models.js~PyropeModel.html) and the [tests](https://github.com/sdelrio0/pyrope/tree/master/__tests__).
 
 More to come...
  

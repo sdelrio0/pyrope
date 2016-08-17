@@ -70,8 +70,8 @@
     "commitizen": {
       "path": "node_modules/cz-conventional-changelog"
     },
-    "_ghooks": {
-      "pre-push": "npm run cover && npm run check-coverage"
+    "ghooks": {
+      "pre-push": "npm run cover"
     }
   }
 }

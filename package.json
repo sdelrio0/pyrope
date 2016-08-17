@@ -40,9 +40,7 @@
   },
   "homepage": "https://github.com/sdelrio0/pyrope#readme",
   "dependencies": {
-    "bluebird": "^3.4.1",
     "inflected": "^1.1.7",
-    "jsonwebtoken": "^7.1.9",
     "underscore": "^1.8.3",
     "uuid": "^2.0.2"
   },

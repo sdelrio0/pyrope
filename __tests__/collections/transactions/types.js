@@ -24,7 +24,7 @@ const TransactionType = new GraphQLObjectType({
     },
     operation: {
       type: new GraphQLList(OperationType),
-      dependent: 'destroy', // destroy all transactions when the operation is deleted
+      dependent: 'nullify', // destroy all transactions when the operation is deleted
       hasMany: false,
       resolve: (source, args, context) => resolvers.getOperation(source)
     }

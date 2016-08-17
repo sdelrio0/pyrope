@@ -24,7 +24,7 @@ const OperationType = new GraphQLObjectType({
     },
     transactions: {
       type: new GraphQLList(TransactionType),
-      dependent: 'nullify', // dissociate when a transaction is deleted
+      dependent: 'destroy', // dissociate when a transaction is deleted
       hasMany: true,
       resolve: (source, args, context) => resolvers.getTransactions(source)
     }

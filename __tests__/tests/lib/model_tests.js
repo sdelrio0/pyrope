@@ -4,6 +4,7 @@ import PyropeModel from '../../../lib';
 import { resetDatabase, createUser, createContact, createOrganization, createTransaction, createOperation } from '../../test_helper';
 import Promise from 'bluebird';
 const bcrypt = Promise.promisifyAll(require('bcryptjs'));
+import { filter } from 'underscore';
 
 import { UserType } from '../../collections/users/types';
 import { ContactType } from '../../collections/contacts/types';
@@ -24,7 +25,7 @@ const DEBUG = true;
 
 const log = (msg, json) => {if(DEBUG) {console.log(`${msg}\n${json ? JSON.stringify(json, null, 2) : ''}\n`)}};
 
-describe.only('Model', function() {
+describe('Model', function() {
   this.timeout(TEST_TIMEOUT);
   
   // Records
@@ -32,7 +33,9 @@ describe.only('Model', function() {
   let c1, c2, c3, c4, c5; // contact
   let o1, o2, o3, o4; // org
   let p1, p2, p3; // operation
+  let pp1, pp2; // operation
   let t1, t2, t3, t4, t5, t6, t7; // transaction
+  let tt1, tt2, tt3, tt4, tt5, tt6, tt7; // transaction
   
   let cursor;
   
@@ -52,6 +55,8 @@ describe.only('Model', function() {
     .then(() => createOperation({}).then(u => p1 = u))
     .then(() => createOperation({}).then(u => p2 = u))
     .then(() => createOperation({}).then(u => p3 = u))
+    .then(() => createOperation({}).then(u => pp1 = u))
+    .then(() => createOperation({}).then(u => pp2 = u))
     .then(() => createTransaction({}).then(u => t1 = u))
     .then(() => createTransaction({}).then(u => t2 = u))
     .then(() => createTransaction({}).then(u => t3 = u))
@@ -59,6 +64,13 @@ describe.only('Model', function() {
     .then(() => createTransaction({}).then(u => t5 = u))
     .then(() => createTransaction({}).then(u => t6 = u))
     .then(() => createTransaction({}).then(u => t7 = u))
+    .then(() => createTransaction({}).then(u => tt1 = u))
+    .then(() => createTransaction({}).then(u => tt2 = u))
+    .then(() => createTransaction({}).then(u => tt3 = u))
+    .then(() => createTransaction({}).then(u => tt4 = u))
+    .then(() => createTransaction({}).then(u => tt5 = u))
+    .then(() => createTransaction({}).then(u => tt6 = u))
+    .then(() => createTransaction({}).then(u => tt7 = u))
   );
   
   describe('constructor()', function() {
@@ -733,16 +745,131 @@ describe.only('Model', function() {
       }));
     });
     
-    xdescribe('Destroy dependent', function() {
+    describe('Destroy dependent', function() {
+      const Operation = new PyropeModel(OperationType);
+      
+      it('setChildren(pp1, [tt1, tt2, tt3])', () => new Promise((resolve, reject) => {
+        Operation.setChildren(pp1.uuid, {transactions: [tt1.uuid, tt2.uuid, tt3.uuid]})
+        .then(res => {
+          resolve(Promise.all([
+            expect(res).to.equal(true)
+          ]))
+        })
+        .catch(err => reject(err));
+      }));
+  
+      it('setChildren(pp2, [tt4, tt5, tt6])', () => new Promise((resolve, reject) => {
+        Operation.setChildren(pp2.uuid, {transactions: [tt4.uuid, tt5.uuid, tt6.uuid]})
+          .then(res => {
+            resolve(Promise.all([
+              expect(res).to.equal(true)
+            ]))
+          })
+          .catch(err => reject(err));
+      }));
+  
+      it('destroy(pp1), destroys tt1, tt2, tt3', () => new Promise((resolve, reject) => {
+        Operation.destroy({uuid: pp1.uuid})
+          .then(res => {
+            resolve(Promise.all([
+              expect(res).to.have.property('uuid', pp1.uuid)
+            ]))
+          })
+          .catch(err => reject(err));
+      }));
+  
+      it('checks that tt1, tt2, tt3 have been destroyed', () => new Promise((resolve, reject) => {
+        const promises = [
+          pyrope.findByIndex({
+            tableName: '_test_transactions',
+            index: {uuid: tt1.uuid}
+          }),
+          pyrope.findByIndex({
+            tableName: '_test_transactions',
+            index: {uuid: tt2.uuid}
+          }),
+          pyrope.findByIndex({
+            tableName: '_test_transactions',
+            index: {uuid: tt3.uuid}
+          })
+        ];
+        
+        Promise.all(promises)
+          .then((res) => {
+            if(filter(res, r => r === false).length !== 3) {
+              reject(`Not all items were deleted.`)
+            } else {
+              resolve()
+            }
+          })
+          .catch(err => reject(err));
+      }));
+      
       
     });
   
-    xdescribe('Destroy nullify', function() {
+    describe('Destroy nullify', function() {
+      const Transaction = new PyropeModel(TransactionType);
+      const Operation = new PyropeModel(OperationType);
+      
+      it('destroy(tt4), nullifies pp2.tt4', () => new Promise((resolve, reject) => {
+        Transaction.destroy({uuid: tt4.uuid})
+          .then(res => {
+            resolve(Promise.all([
+              expect(res).to.have.property('uuid', tt4.uuid)
+            ]))
+          })
+          .catch(err => reject(err));
+      }));
+  
+      it('checks that pp2.transactions = [tt5, tt6]', () => new Promise((resolve, reject) => {
+        Operation.getChildren(pp2.uuid, 'transaction', operationResolvers.getTransaction)
+          .then(res => {
+            resolve(Promise.all([
+              expect(res).to.be.an('array').of.length(2),
+              expect(res[0]).to.have.property('uuid', tt5.uuid),
+              expect(res[1]).to.have.property('uuid', tt6.uuid),
+            ]))
+          })
+          .catch(err => reject(err));
+      }));
+  
+      it('destroy(pp2), destroys tt5, tt6', () => new Promise((resolve, reject) => {
+        Operation.destroy({uuid: pp2.uuid})
+          .then(res => {
+            resolve(Promise.all([
+              expect(res).to.have.property('uuid', pp2.uuid)
+            ]))
+          })
+          .catch(err => reject(err));
+      }));
+  
+      it('checks that tt5, tt6 have been destroyed', () => new Promise((resolve, reject) => {
+        const promises = [
+          pyrope.findByIndex({
+            tableName: '_test_transactions',
+            index: {uuid: tt5.uuid}
+          }),
+          pyrope.findByIndex({
+            tableName: '_test_transactions',
+            index: {uuid: tt6.uuid}
+          }),
+        ];
     
+        Promise.all(promises)
+          .then((res) => {
+            if(filter(res, r => r === false).length !== 2) {
+              reject(`Not all items were deleted.`)
+            } else {
+              resolve()
+            }
+          })
+          .catch(err => reject(err));
+      }));
     });
   });
   
-  xdescribe('Associations', function() {
+  describe('Associations', function() {
     let User = new PyropeModel(UserType);
     let Contact = new PyropeModel(ContactType);
     let Organization = new PyropeModel(OrganizationType);

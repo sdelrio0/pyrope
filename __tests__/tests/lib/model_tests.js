@@ -30,7 +30,7 @@ describe.only('Model', function() {
   // Records
   let u1, u2, u3; // user
   let c1, c2, c3; // contact
-  let o1, o2, o3; // org
+  let o1, o2, o3, o4; // org
   let p1, p2, p3; // operation
   let t1, t2, t3, t4, t5, t6, t7; // transaction
   
@@ -46,6 +46,7 @@ describe.only('Model', function() {
     .then(() => createOrganization({}).then(u => o1 = u))
     .then(() => createOrganization({}).then(u => o2 = u))
     .then(() => createOrganization({}).then(u => o3 = u))
+    .then(() => createOrganization({}).then(u => o4 = u))
     .then(() => createOperation({}).then(u => p1 = u))
     .then(() => createOperation({}).then(u => p2 = u))
     .then(() => createOperation({}).then(u => p3 = u))
@@ -362,7 +363,7 @@ describe.only('Model', function() {
     let Operation = new PyropeModel(OperationType, {table: '_test_operations', defaultQueryKey: 'username'});
     let Transaction = new PyropeModel(TransactionType, {table: '_test_transactions', defaultQueryKey: 'username'});
     
-    describe('1:1', function() {
+    xdescribe('1:1', function() {
       describe('Association', function() {
         it('setChild(u1, c1)', () => new Promise((resolve, reject) => {
           User.setChild(u1.uuid, {contact: c1.uuid}, {table: '_test_contacts_users'})
@@ -492,7 +493,7 @@ describe.only('Model', function() {
       });
     });
   
-    describe('1:N', function() {
+    xdescribe('1:N', function() {
       describe('Associations', function() {
         it('scalar - setChildren(p1, t1)', () => new Promise((resolve, reject) => {
           Operation.setChildren(p1.uuid, {transactions: t1.uuid}, {table: '_test_operations_transactions'})
@@ -507,7 +508,6 @@ describe.only('Model', function() {
             .then(res => {
               resolve(Promise.all([
                 expect(res).to.be.an('array').of.length(1),
-                expect(res[0]).to.have.property('uuid', t1.uuid),
                 expect(res[0]).to.have.property('uuid', t1.uuid),
               ]))
             })
@@ -733,9 +733,297 @@ describe.only('Model', function() {
         }));
       });
     });
+    
+    xdescribe('N:N', function() {
+      describe('Associations', function() {
+        it('scalar - setChildren(o1, c1)', () => new Promise((resolve, reject) => {
+          Organization.setChildren(o1.uuid, {contact: c1.uuid}, {table: '_test_contacts_organizations'})
+            .then(res => {
+              resolve(expect(res).to.equal(true))
+            })
+            .catch(err => reject(err));
+        }));
   
-    xdescribe('1:N', function() {
-      
+        it('check getChildren(o1) == c1', () => new Promise((resolve, reject) => {
+          Organization.getChildren(o1.uuid, 'contacts', organizationResolvers.getContacts, {table: '_test_contacts_organizations'})
+            .then(res => {
+              resolve(Promise.all([
+                expect(res).to.be.an('array').of.length(1),
+                expect(res[0]).to.have.property('uuid', c1.uuid),
+              ]))
+            })
+            .catch(err => reject(err));
+        }));
+  
+        it('check getChildren(c1) == o1', () => new Promise((resolve, reject) => {
+          Contact.getChildren(c1.uuid, 'organizations', contactResolvers.getOrganizations, {table: '_test_contacts_organizations'})
+            .then(res => {
+              resolve(Promise.all([
+                expect(res).to.be.an('array').of.length(1),
+                expect(res[0]).to.have.property('uuid', o1.uuid),
+              ]))
+            })
+            .catch(err => reject(err));
+        }));
+  
+        it('check count == 1', () => new Promise((resolve, reject) => {
+          pyrope.count({tableName: '_test_contacts_organizations'})
+            .then(res => resolve(Promise.all([
+              expect(res).to.equal(1)
+            ])))
+            .catch(err => reject(err));
+        }));
+  
+        it('array - setChildren(o1, [c2,c3])', () => new Promise((resolve, reject) => {
+          Organization.setChildren(o1.uuid, {contacts: [c2.uuid, c3.uuid]}, {table: '_test_contacts_organizations'})
+            .then(res => {
+              resolve(expect(res).to.equal(true))
+            })
+            .catch(err => reject(err));
+        }));
+  
+        it('check - getChildren(o1) == [c1, c2, c3]', () => new Promise((resolve, reject) => {
+          Organization.getChildren(o1.uuid, 'contacts', organizationResolvers.getContacts, {table: '_test_contacts_organizations'})
+            .then(res => {
+              resolve(Promise.all([
+                expect(res).to.be.an('array').of.length(3),
+                expect(res[0]).to.have.property('uuid', c1.uuid),
+                expect(res[1]).to.have.property('uuid', c2.uuid),
+                expect(res[2]).to.have.property('uuid', c3.uuid),
+              ]))
+            })
+            .catch(err => reject(err));
+        }));
+  
+        it('check - getChildren(c2) == o1', () => new Promise((resolve, reject) => {
+          Contact.getChildren(c2.uuid, 'organizations', contactResolvers.getOrganizations, {table: '_test_contacts_organizations'})
+            .then(res => {
+              resolve(Promise.all([
+                expect(res).to.be.an('array').of.length(1),
+                expect(res[0]).to.have.property('uuid', o1.uuid),
+              ]))
+            })
+            .catch(err => reject(err));
+        }));
+  
+        it('check - getChildren(c3) == o1', () => new Promise((resolve, reject) => {
+          Contact.getChildren(c3.uuid, 'organizations', contactResolvers.getOrganizations, {table: '_test_contacts_organizations'})
+            .then(res => {
+              resolve(Promise.all([
+                expect(res).to.be.an('array').of.length(1),
+                expect(res[0]).to.have.property('uuid', o1.uuid),
+              ]))
+            })
+            .catch(err => reject(err));
+        }));
+  
+        it('check count == 3', () => new Promise((resolve, reject) => {
+          pyrope.count({tableName: '_test_contacts_organizations'})
+            .then(res => resolve(Promise.all([
+              expect(res).to.equal(3)
+            ])))
+            .catch(err => reject(err));
+        }));
+  
+        it('scalar - setChildren(c1, o2)', () => new Promise((resolve, reject) => {
+          Contact.setChildren(c1.uuid, {organization: o2.uuid}, {table: '_test_contacts_organizations'})
+            .then(res => {
+              resolve(expect(res).to.equal(true))
+            })
+            .catch(err => reject(err));
+        }));
+  
+        it('check getChildren(c1) == [o1, o2]', () => new Promise((resolve, reject) => {
+          Contact.getChildren(c1.uuid, 'organizations', contactResolvers.getOrganizations, {table: '_test_contacts_organizations'})
+            .then(res => {
+              resolve(Promise.all([
+                expect(res).to.be.an('array').of.length(2),
+                expect(res[0]).to.have.property('uuid', o1.uuid),
+                expect(res[1]).to.have.property('uuid', o2.uuid),
+              ]))
+            })
+            .catch(err => reject(err));
+        }));
+  
+        it('check count == 4', () => new Promise((resolve, reject) => {
+          pyrope.count({tableName: '_test_contacts_organizations'})
+            .then(res => resolve(Promise.all([
+              expect(res).to.equal(4)
+            ])))
+            .catch(err => reject(err));
+        }));
+  
+        it('array - setChildren(c1, [o3, o4])', () => new Promise((resolve, reject) => {
+          Contact.setChildren(c1.uuid, {organizations: [o3.uuid, o4.uuid]}, {table: '_test_contacts_organizations'})
+            .then(res => {
+              resolve(expect(res).to.equal(true))
+            })
+            .catch(err => reject(err));
+        }));
+  
+        it('check getChildren(c1) == [o1, o2, o3, o4]', () => new Promise((resolve, reject) => {
+          Contact.getChildren(c1.uuid, 'organizations', contactResolvers.getOrganizations, {table: '_test_contacts_organizations'})
+            .then(res => {
+              resolve(Promise.all([
+                expect(res).to.be.an('array').of.length(4),
+                expect(res[0]).to.have.property('uuid', o1.uuid),
+                expect(res[1]).to.have.property('uuid', o2.uuid),
+                expect(res[2]).to.have.property('uuid', o3.uuid),
+                expect(res[3]).to.have.property('uuid', o4.uuid),
+              ]))
+            })
+            .catch(err => reject(err));
+        }));
+  
+        it('check count == 6', () => new Promise((resolve, reject) => {
+          pyrope.count({tableName: '_test_contacts_organizations'})
+            .then(res => resolve(Promise.all([
+              expect(res).to.equal(6)
+            ])))
+            .catch(err => reject(err));
+        }));
+      });
+  
+      describe('Dissociations', function() {
+        it('scalar - unsetChildren(o1, c1)', () => new Promise((resolve, reject) => {
+          Organization.unsetChildren(o1.uuid, {contact: c1.uuid}, {table: '_test_contacts_organizations'})
+            .then(res => {
+              resolve(expect(res).to.equal(true))
+            })
+            .catch(err => reject(err));
+        }));
+  
+        it('check - getChildren(o1) == [c2, c3]', () => new Promise((resolve, reject) => {
+          Organization.getChildren(o1.uuid, 'contacts', organizationResolvers.getContacts, {table: '_test_contacts_organizations'})
+            .then(res => {
+              resolve(Promise.all([
+                expect(res).to.be.an('array').of.length(2),
+                expect(res[0]).to.have.property('uuid', c2.uuid),
+                expect(res[1]).to.have.property('uuid', c3.uuid),
+              ]))
+            })
+            .catch(err => reject(err));
+        }));
+  
+        it('check - getChildren(c2) == o1', () => new Promise((resolve, reject) => {
+          Contact.getChildren(c2.uuid, 'organizations', contactResolvers.getOrganizations, {table: '_test_contacts_organizations'})
+            .then(res => {
+              resolve(Promise.all([
+                expect(res).to.be.an('array').of.length(1),
+                expect(res[0]).to.have.property('uuid', o1.uuid),
+              ]))
+            })
+            .catch(err => reject(err));
+        }));
+  
+        it('check - getChildren(c3) == o1', () => new Promise((resolve, reject) => {
+          Contact.getChildren(c3.uuid, 'organizations', contactResolvers.getOrganizations, {table: '_test_contacts_organizations'})
+            .then(res => {
+              resolve(Promise.all([
+                expect(res).to.be.an('array').of.length(1),
+                expect(res[0]).to.have.property('uuid', o1.uuid),
+              ]))
+            })
+            .catch(err => reject(err));
+        }));
+  
+        it('check - count == 5', () => new Promise((resolve, reject) => {
+          pyrope.count({tableName: '_test_contacts_organizations'})
+            .then(res => resolve(Promise.all([
+              expect(res).to.equal(5)
+            ])))
+            .catch(err => reject(err));
+        }));
+  
+        it('all - unsetChildren(o1, contacts)', () => new Promise((resolve, reject) => {
+          Organization.unsetChildren(o1.uuid, {contacts: null}, {table: '_test_contacts_organizations'})
+            .then(res => {
+              resolve(expect(res).to.equal(true))
+            })
+            .catch(err => reject(err));
+        }));
+  
+        it('check - getChildren(c1) == [o2, o3, o4]', () => new Promise((resolve, reject) => {
+          Contact.getChildren(c1.uuid, 'organizations', contactResolvers.getOrganizations, {table: '_test_contacts_organizations'})
+            .then(res => {
+              resolve(Promise.all([
+                expect(res).to.be.an('array').of.length(3),
+                expect(res[0]).to.have.property('uuid', o2.uuid),
+                expect(res[1]).to.have.property('uuid', o3.uuid),
+                expect(res[2]).to.have.property('uuid', o4.uuid),
+              ]))
+            })
+            .catch(err => reject(err));
+        }));
+  
+        it('check - getChildren(o2) == c1', () => new Promise((resolve, reject) => {
+          Organization.getChildren(o2.uuid, 'contacts', organizationResolvers.getContacts, {table: '_test_contacts_organizations'})
+            .then(res => {
+              resolve(Promise.all([
+                expect(res).to.be.an('array').of.length(1),
+                expect(res[0]).to.have.property('uuid', c1.uuid),
+              ]))
+            })
+            .catch(err => reject(err));
+        }));
+  
+        it('check - getChildren(o3) == c1', () => new Promise((resolve, reject) => {
+          Organization.getChildren(o3.uuid, 'contacts', organizationResolvers.getContacts, {table: '_test_contacts_organizations'})
+            .then(res => {
+              resolve(Promise.all([
+                expect(res).to.be.an('array').of.length(1),
+                expect(res[0]).to.have.property('uuid', c1.uuid),
+              ]))
+            })
+            .catch(err => reject(err));
+        }));
+  
+        it('check - getChildren(o4) == c1', () => new Promise((resolve, reject) => {
+          Organization.getChildren(o4.uuid, 'contacts', organizationResolvers.getContacts, {table: '_test_contacts_organizations'})
+            .then(res => {
+              resolve(Promise.all([
+                expect(res).to.be.an('array').of.length(1),
+                expect(res[0]).to.have.property('uuid', c1.uuid),
+              ]))
+            })
+            .catch(err => reject(err));
+        }));
+  
+        it('check - count == 3', () => new Promise((resolve, reject) => {
+          pyrope.count({tableName: '_test_contacts_organizations'})
+            .then(res => resolve(Promise.all([
+              expect(res).to.equal(3)
+            ])))
+            .catch(err => reject(err));
+        }));
+  
+        it('array - unsetChildren(c1, [o2, o4])', () => new Promise((resolve, reject) => {
+          Contact.unsetChildren(c1.uuid, {organizations: [o2.uuid, o4.uuid]}, {table: '_test_contacts_organizations'})
+            .then(res => {
+              resolve(expect(res).to.equal(true))
+            })
+            .catch(err => reject(err));
+        }));
+  
+        it('check - getChildren(c1) == o3', () => new Promise((resolve, reject) => {
+          Contact.getChildren(c1.uuid, 'organizations', contactResolvers.getOrganizations, {table: '_test_contacts_organizations'})
+            .then(res => {
+              resolve(Promise.all([
+                expect(res).to.be.an('array').of.length(1),
+                expect(res[0]).to.have.property('uuid', o3.uuid),
+              ]))
+            })
+            .catch(err => reject(err));
+        }));
+  
+        it('check - count == 1', () => new Promise((resolve, reject) => {
+          pyrope.count({tableName: '_test_contacts_organizations'})
+            .then(res => resolve(Promise.all([
+              expect(res).to.equal(1)
+            ])))
+            .catch(err => reject(err));
+        }));
+      });
     });
   });
 });

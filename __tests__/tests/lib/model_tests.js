@@ -100,10 +100,12 @@ describe('Model', function() {
       }).catch(err => reject(err));
     }));
     
-    it('throws when the record doesn\'t exist', () => new Promise((resolve, reject) => {
+    it('returns false when the record doesn\'t exist', () => new Promise((resolve, reject) => {
       User.get({username: 'user111'})
-        .then(res => reject(`Expected rejection`))
-        .catch(err => resolve());
+        .then(res => resolve(
+          expect(res).to.equal(false)
+        ))
+        .catch(err => reject(err));
     }));
   
     it('throws when the index doesn\'t exist', () => new Promise((resolve, reject) => {
@@ -268,7 +270,9 @@ describe('Model', function() {
       
       it('throws when the record doesn\'t exist', () => new Promise((resolve, reject) => {
         User.update({username: 'user1111'}, {username: 'user1_updated'})
-          .then(res => reject(`Expected rejection`))
+          .then(res => resolve(
+            expect(res).to.equal(false)
+          ))
           .catch(err => resolve());
       }));
     });
@@ -740,7 +744,9 @@ describe('Model', function() {
       
       it('throws when the record doesn\'t exist', () => new Promise((resolve, reject) => {
         User.destroy({username: 'user111'})
-          .then(res => reject(`Expected rejection`))
+          .then(res => resolve(
+            expect(res).to.equal(false)
+          ))
           .catch(err => resolve());
       }));
     });

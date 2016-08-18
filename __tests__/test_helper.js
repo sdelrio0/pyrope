@@ -28,26 +28,26 @@ export const resetDatabase = ( ) => {
   });
 };
 
-export const createItem = (tableName, attributes) =>
+export const createItem = (tableName, fields) =>
   pyrope.create({
     tableName: `_test_${tableName}`,
-    attributes: {
-      ...attributes
+    fields: {
+      ...fields
     }
   });
 
-export const createUser = (attributes) => createItem('users', attributes);
-export const createContact = (attributes) => createItem('contacts', attributes);
-export const createOrganization = (attributes) => createItem('organizations', attributes);
-export const createTransaction = (attributes) => createItem('transactions', attributes);
-export const createOperation = (attributes) => createItem('operations', attributes);
+export const createUser = (fields) => createItem('users', fields);
+export const createContact = (fields) => createItem('contacts', fields);
+export const createOrganization = (fields) => createItem('organizations', fields);
+export const createTransaction = (fields) => createItem('transactions', fields);
+export const createOperation = (fields) => createItem('operations', fields);
 
-export const createUserRecursive = (attributes, count) => {
+export const createUserRecursive = (fields, count) => {
   return new Promise((resolve, reject) => {
-    createUser({...attributes, username: attributes.username + count})
+    createUser({...fields, username: fields.username + count})
       .then(() => {
         if(--count > 0) {
-          createUserRecursive(attributes, count)
+          createUserRecursive(fields, count)
             .then(res => resolve(res))
             .catch(err => reject(err))
         } else {

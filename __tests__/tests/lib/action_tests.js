@@ -12,11 +12,11 @@ describe('DynamoDB actions', function() {
     this.timeout(TEST_TIMEOUT);
     beforeEach(() => resetDatabase());
      
-    it('creates a new user and returns the correct attributes', function() {
+    it('creates a new user and returns the correct fields', function() {
       return new Promise((resolve, reject) => {
         pyrope.create({
           tableName: '_test_users',
-          attributes: {
+          fields: {
             username: 'john',
             password: 'password'
           }
@@ -419,7 +419,7 @@ describe('DynamoDB actions', function() {
       pyrope.update({
         tableName: '_test_users',
         index: {username: 'john'},
-        attributes: {
+        fields: {
           username: 'john2',
           password: 'password2'
         }
@@ -438,7 +438,7 @@ describe('DynamoDB actions', function() {
         pyrope.update({
           tableName: '_test_users',
           index: {username: 'john'},
-          attributes: {
+          fields: {
             username: 'john2',
             password: 'password2'
           }
@@ -456,7 +456,7 @@ describe('DynamoDB actions', function() {
       pyrope.update({
         tableName: '_test_users',
         index: {uuid: 'wronguuid', createdAt: 123},
-        attributes: {
+        fields: {
           username: 'newusername',
           password: 'password2'
         }
@@ -473,13 +473,13 @@ describe('DynamoDB actions', function() {
         pyrope.update({
           tableName: '_test_users',
           index: {username: 'john'},
-          attributes: {
+          fields: {
             password: '123'
           },
-          beforeHook: (attrName, attributes) => {
+          beforeHook: (attrName, fields) => {
             switch (attrName) {
               case 'password':
-                return  {hashedPassword: attributes['password']+'-hashed'};;
+                return  {hashedPassword: fields['password']+'-hashed'};;
               default:
                 return {[attrName]: user[attrName]};
             }
@@ -501,7 +501,7 @@ describe('DynamoDB actions', function() {
             pyrope.update({
               tableName: '_test_users',
               index: {username: 'john'},
-              attributes: {
+              fields: {
                 password: '123'
               }
             })
@@ -528,7 +528,7 @@ describe('DynamoDB actions', function() {
       });
     });
     
-    it("deletes the user and returns its attributes", function() {
+    it("deletes the user and returns its fields", function() {
       return new Promise((resolve, reject) => {
         pyrope.destroy({
           tableName: '_test_users',

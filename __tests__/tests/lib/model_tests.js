@@ -74,15 +74,15 @@ describe('Model', function() {
   );
   
   describe('constructor()', function() {
-    let User = new PyropeModel(UserType);
+    let User = new PyropeModel(UserType, {tablePrefix: 'xxx_', tableSuffix: '_yyy'});
     
-    it('initializes model with correct fields', () => new Promise((resolve, reject) => {
+    it('initializes model with correct tableName', () => new Promise((resolve, reject) => {
       const tableName = (process.env.NODE_ENV === 'test' ? '_test_users' : 'users');
       
       resolve(Promise.all([
         expect(User.name).to.equal(User.name),
         expect(User.humanName).to.equal('User'),
-        expect(User.table).to.equal(tableName),
+        expect(User.tableName).to.equal('xxx_' + tableName + '_yyy'),
         expect(User.fields).to.be.an('object')
       ]));
     }));

@@ -1,10 +1,8 @@
-import { expect } from 'chai';
-import * as pyrope from '../../../lib';
-import PyropeModel from '../../../lib';
-import { resetDatabase, createUser, createContact, createOrganization, createTransaction, createOperation } from '../../test_helper';
-import Promise from 'bluebird';
-const bcrypt = Promise.promisifyAll(require('bcryptjs'));
 import { filter } from 'underscore';
+import { expect } from 'chai';
+
+import { PyropeModel, PyropeActions } from '../../../lib';
+import { resetDatabase, createUser, createContact, createOrganization, createTransaction, createOperation } from '../../test_helper';
 
 import { UserType } from '../../collections/users/types';
 import { ContactType } from '../../collections/contacts/types';
@@ -19,7 +17,17 @@ import * as operationResolvers from '../../collections/operations/resolvers';
 import * as transactionResolvers from '../../collections/transactions/resolvers';
 
 import { validations as userValidations } from '../../collections/users/validations';
-import { TEST_TIMEOUT } from '../../test_helper';
+import { TEST_TIMEOUT, tablePrefix, tableSuffix } from '../../test_helper';
+
+const User = new PyropeModel(UserType, {validations: userValidations, tablePrefix, tableSuffix});
+const Contact = new PyropeModel(ContactType, {tablePrefix, tableSuffix});
+const Organization = new PyropeModel(OrganizationType, {tablePrefix, tableSuffix});
+const Operation = new PyropeModel(OperationType, {tablePrefix, tableSuffix});
+const Transaction = new PyropeModel(TransactionType, {tablePrefix, tableSuffix});
+
+const ContactsUsers = new PyropeActions({tablePrefix, tableSuffix, tableName: 'contacts_users'});
+const ContactsOrganizations = new PyropeActions({tablePrefix, tableSuffix, tableName: 'contacts_organizations'});
+const OperationsTransactions = new PyropeActions({tablePrefix, tableSuffix, tableName: 'operations_transactions'});
 
 const DEBUG = true;
 
@@ -74,22 +82,19 @@ describe('Model', function() {
   );
   
   describe('constructor()', function() {
-    let User = new PyropeModel(UserType, {tablePrefix: 'xxx_', tableSuffix: '_yyy'});
+    // let User = new PyropeModel(UserType, {tablePrefix, tableSuffix});
     
     it('initializes model with correct tableName', () => new Promise((resolve, reject) => {
-      const tableName = (process.env.NODE_ENV === 'test' ? '_test_users' : 'users');
-      
       resolve(Promise.all([
         expect(User.name).to.equal(User.name),
-        expect(User.humanName).to.equal('User'),
-        expect(User.tableName).to.equal('xxx_' + tableName + '_yyy'),
+        expect(User.fullTableName).to.equal('qtz-users-test'),
         expect(User.fields).to.be.an('object')
       ]));
     }));
   });
   
   describe('get({uuid: u1.uuid})', function() {
-    let User = new PyropeModel(UserType);
+    // let User = new PyropeModel(UserType, {tablePrefix, tableSuffix});
     
     it('retrieves the proper fields', () => new Promise((resolve, reject) => {
       User.get({uuid: u1.uuid}).then(res => {
@@ -117,7 +122,7 @@ describe('Model', function() {
   
   describe('getAll()', function() {
     describe('getAll({})', function () {
-      let User = new PyropeModel(UserType);
+      // let User = new PyropeModel(UserType, {tablePrefix, tableSuffix});
     
       it('retrieves all users with proper fields', () => new Promise((resolve, reject) => {
         User.getAll().then(res => {
@@ -133,7 +138,7 @@ describe('Model', function() {
     });
   
     describe('getAll({order: \'desc\'})', function () {
-      let User = new PyropeModel(UserType);
+      // let User = new PyropeModel(UserType, {tablePrefix, tableSuffix});
     
       it('retrieves all users in desc. order with proper fields', () => new Promise((resolve, reject) => {
         User.getAll({order: 'desc'}).then(res => {
@@ -149,7 +154,7 @@ describe('Model', function() {
     });
   
     describe('getAll({limit: 1})', function () {
-      let User = new PyropeModel(UserType);
+      // let User = new PyropeModel(UserType, {tablePrefix, tableSuffix});
     
       it('retrieves 1 user and saves cursor', () => new Promise((resolve, reject) => {
         User.getAll({limit: 1}).then(res => {
@@ -166,7 +171,7 @@ describe('Model', function() {
     });
   
     describe('getAll({cursor})', function () {
-      let User = new PyropeModel(UserType);
+      // let User = new PyropeModel(UserType, {tablePrefix, tableSuffix});
     
       it('retrieves next 2 users using the cursor', () => new Promise((resolve, reject) => {
         User.getAll({cursor}).then(res => {
@@ -183,7 +188,7 @@ describe('Model', function() {
   
   describe('create()', function() {
     describe('create({username: \'user1\'})', function() {
-      let User = new PyropeModel(UserType);
+      // let User = new PyropeModel(UserType, {tablePrefix, tableSuffix});
       
       it('creates user with proper fields', () => new Promise((resolve, reject) => {
         User.create({username: 'user1'}).then(res => {
@@ -200,7 +205,7 @@ describe('Model', function() {
       }));
       
       it('checks table count === 4', () => new Promise((resolve, reject) => {
-        pyrope.count({tableName: '_test_users'})
+        User.count()
           .then(res => resolve(Promise.all([
             expect(res).to.equal(4)
           ])))
@@ -209,7 +214,7 @@ describe('Model', function() {
     });
   
     describe('create({username: \'user2\', password: \'password\'}, {beforeValidation, afterValidation, beforeCreate, afterCreate})', function() {
-      let User = new PyropeModel(UserType, {validations: userValidations});
+      // let User = new PyropeModel(UserType, {validations: userValidations, tablePrefix, tableSuffix});
     
       const beforeValidation = (fields, fieldName) => new Promise((resolve, reject) => {
         resolve({...fields, beforeValidation: true});
@@ -241,7 +246,7 @@ describe('Model', function() {
       }));
   
       it('checks table count === 5', () => new Promise((resolve, reject) => {
-        pyrope.count({tableName: '_test_users'})
+        User.count()
           .then(res => resolve(Promise.all([
             expect(res).to.equal(5)
           ])))
@@ -252,7 +257,7 @@ describe('Model', function() {
   
   describe('update()', function() {
     describe('update(index, fields)', function() {
-      let User = new PyropeModel(UserType);
+      // let User = new PyropeModel(UserType, {tablePrefix, tableSuffix});
       
       it('updates record and return proper object mapping', () => new Promise((resolve, reject) => {
         User.update({username: 'user1'}, {username: 'user1_updated'}).then(res => {
@@ -278,7 +283,7 @@ describe('Model', function() {
     });
     
     describe('update(index, fields, {...hooks})', function() {
-      let User = new PyropeModel(UserType, {validations: userValidations});
+      // let User = new PyropeModel(UserType, {validations: userValidations, tablePrefix, tableSuffix});
       
       const beforeValidation = (fields, fieldName) => new Promise((resolve, reject) => {
         resolve({...fields, beforeValidation: true});
@@ -315,7 +320,7 @@ describe('Model', function() {
     });
   
     describe('setChild: u1.contact = c1 via update()', function() {
-      let User = new PyropeModel(UserType);
+      let User = new PyropeModel(UserType, {tablePrefix, tableSuffix});
       
       it('makes update', () => new Promise((resolve, reject) => {
         User.update({uuid: u1.uuid}, {setContact: c1.uuid})
@@ -328,8 +333,7 @@ describe('Model', function() {
       }));
   
       it('checks - u1.contact == c1', () => new Promise((resolve, reject) => {
-        pyrope.getAssociations({
-          tableName: '_test_contacts_users',
+        ContactsUsers.getAssociations({
           items: [
             {index: {user: u1.uuid}},
             {index: 'contact'}
@@ -345,8 +349,7 @@ describe('Model', function() {
       }));
   
       it('checks - c1.user == u1', () => new Promise((resolve, reject) => {
-        pyrope.getAssociations({
-          tableName: '_test_contacts_users',
+        ContactsUsers.getAssociations({
           items: [
             {index: {contact: c1.uuid}},
             {index: 'user'}
@@ -363,7 +366,7 @@ describe('Model', function() {
     });
   
     describe('unsetChild: u1.contact = null via update())', function() {
-      let User = new PyropeModel(UserType);
+      // let User = new PyropeModel(UserType, {tablePrefix, tableSuffix});
   
       it('makes update', () => new Promise((resolve, reject) => {
         User.update({uuid: u1.uuid}, {unsetContact: null})
@@ -376,8 +379,7 @@ describe('Model', function() {
       }));
   
       it('checks - u1.contact == null', () => new Promise((resolve, reject) => {
-        pyrope.getAssociations({
-          tableName: '_test_contacts_users',
+        ContactsUsers.getAssociations({
           items: [
             {index: {user: u1.uuid}},
             {index: 'contact'}
@@ -392,8 +394,7 @@ describe('Model', function() {
       }));
   
       it('checks - c1.user == null', () => new Promise((resolve, reject) => {
-        pyrope.getAssociations({
-          tableName: '_test_contacts_users',
+        ContactsUsers.getAssociations({
           items: [
             {index: {contact: c1.uuid}},
             {index: 'user'}
@@ -409,8 +410,8 @@ describe('Model', function() {
     });
   
     describe('setChildren: o1.contacts = [c1, c2] via update())', function() {
-      let Organization = new PyropeModel(OrganizationType);
-  
+      // let Organization = new PyropeModel(OrganizationType, {tablePrefix, tableSuffix});
+      
       it('makes update', () => new Promise((resolve, reject) => {
         Organization.update({uuid: o1.uuid}, {setContacts: [c1.uuid, c2.uuid, c3.uuid, c4.uuid, c5.uuid]})
           .then(res => {
@@ -422,8 +423,7 @@ describe('Model', function() {
       }));
   
       it('checks - o1.contacts == [c1, c2, c3, c4, c5]', () => new Promise((resolve, reject) => {
-        pyrope.getAssociations({
-          tableName: '_test_contacts_organizations',
+        ContactsOrganizations.getAssociations({
           items: [
             {index: {organization: o1.uuid}},
             {index: 'contact'}
@@ -443,8 +443,7 @@ describe('Model', function() {
       }));
   
       it('checks - c1.organization == o1', () => new Promise((resolve, reject) => {
-        pyrope.getAssociations({
-          tableName: '_test_contacts_organizations',
+        ContactsOrganizations.getAssociations({
           items: [
             {index: {contact: c1.uuid}},
             {index: 'organization'}
@@ -460,8 +459,7 @@ describe('Model', function() {
       }));
   
       it('checks - c2.organization == o1', () => new Promise((resolve, reject) => {
-        pyrope.getAssociations({
-          tableName: '_test_contacts_organizations',
+        ContactsOrganizations.getAssociations({
           items: [
             {index: {contact: c2.uuid}},
             {index: 'organization'}
@@ -477,8 +475,7 @@ describe('Model', function() {
       }));
   
       it('checks - c3.organization == o1', () => new Promise((resolve, reject) => {
-        pyrope.getAssociations({
-          tableName: '_test_contacts_organizations',
+        ContactsOrganizations.getAssociations({
           items: [
             {index: {contact: c3.uuid}},
             {index: 'organization'}
@@ -494,8 +491,7 @@ describe('Model', function() {
       }));
   
       it('checks - c4.organization == o1', () => new Promise((resolve, reject) => {
-        pyrope.getAssociations({
-          tableName: '_test_contacts_organizations',
+        ContactsOrganizations.getAssociations({
           items: [
             {index: {contact: c4.uuid}},
             {index: 'organization'}
@@ -511,8 +507,7 @@ describe('Model', function() {
       }));
   
       it('checks - c5.organization == o1', () => new Promise((resolve, reject) => {
-        pyrope.getAssociations({
-          tableName: '_test_contacts_organizations',
+        ContactsOrganizations.getAssociations({
           items: [
             {index: {contact: c5.uuid}},
             {index: 'organization'}
@@ -529,8 +524,6 @@ describe('Model', function() {
     });
   
     describe('unsetChildren(o1, c1) via update())', function() {
-      let Organization = new PyropeModel(OrganizationType);
-      
       it('makes update', () => new Promise((resolve, reject) => {
         Organization.update({uuid: o1.uuid}, {unsetContacts: c1.uuid})
           .then(res => {
@@ -542,8 +535,7 @@ describe('Model', function() {
       }));
 
       it('checks - o1.contacts == [c2, c3, c4, c5]', () => new Promise((resolve, reject) => {
-        pyrope.getAssociations({
-          tableName: '_test_contacts_organizations',
+        ContactsOrganizations.getAssociations({
           items: [
             {index: {organization: o1.uuid}},
             {index: 'contact'}
@@ -562,8 +554,7 @@ describe('Model', function() {
       }));
 
       it('checks - c1.organizations == []', () => new Promise((resolve, reject) => {
-        pyrope.getAssociations({
-          tableName: '_test_contacts_organizations',
+        ContactsOrganizations.getAssociations({
           items: [
             {index: {contact: c1.uuid}},
             {index: 'organization'}
@@ -579,8 +570,6 @@ describe('Model', function() {
     });
   
     describe('unsetChildren(o1, [c2, c3]) via update())', function() {
-      let Organization = new PyropeModel(OrganizationType);
-  
       it('makes update', () => new Promise((resolve, reject) => {
         Organization.update({uuid: o1.uuid}, {unsetContacts: [c2.uuid, c3.uuid]})
           .then(res => {
@@ -592,8 +581,7 @@ describe('Model', function() {
       }));
   
       it('checks - o1.contacts == [c4, c5]', () => new Promise((resolve, reject) => {
-        pyrope.getAssociations({
-          tableName: '_test_contacts_organizations',
+        ContactsOrganizations.getAssociations({
           items: [
             {index: {organization: o1.uuid}},
             {index: 'contact'}
@@ -610,8 +598,7 @@ describe('Model', function() {
       }));
   
       it('checks - c2.organizations == []', () => new Promise((resolve, reject) => {
-        pyrope.getAssociations({
-          tableName: '_test_contacts_organizations',
+        ContactsOrganizations.getAssociations({
           items: [
             {index: {contact: c2.uuid}},
             {index: 'organization'}
@@ -626,8 +613,7 @@ describe('Model', function() {
       }));
   
       it('checks - c3.organization == []', () => new Promise((resolve, reject) => {
-        pyrope.getAssociations({
-          tableName: '_test_contacts_organizations',
+        ContactsOrganizations.getAssociations({
           items: [
             {index: {contact: c3.uuid}},
             {index: 'organization'}
@@ -643,8 +629,6 @@ describe('Model', function() {
     });
   
     describe('(all) unsetChildren(o1, null) via update())', function() {
-      let Organization = new PyropeModel(OrganizationType);
-  
       it('makes update', () => new Promise((resolve, reject) => {
         Organization.update({uuid: o1.uuid}, {unsetContacts: null})
           .then(res => {
@@ -656,8 +640,7 @@ describe('Model', function() {
       }));
   
       it('checks - o1.contacts == []', () => new Promise((resolve, reject) => {
-        pyrope.getAssociations({
-          tableName: '_test_contacts_organizations',
+        ContactsOrganizations.getAssociations({
           items: [
             {index: {organization: o1.uuid}},
             {index: 'contact'}
@@ -672,8 +655,7 @@ describe('Model', function() {
       }));
   
       it('checks - c4.organization == []', () => new Promise((resolve, reject) => {
-        pyrope.getAssociations({
-          tableName: '_test_contacts_organizations',
+        ContactsOrganizations.getAssociations({
           items: [
             {index: {contact: c4.uuid}},
             {index: 'organization'}
@@ -688,8 +670,7 @@ describe('Model', function() {
       }));
   
       it('checks - c5.organization == []', () => new Promise((resolve, reject) => {
-        pyrope.getAssociations({
-          tableName: '_test_contacts_organizations',
+        ContactsOrganizations.getAssociations({
           items: [
             {index: {contact: c5.uuid}},
             {index: 'organization'}
@@ -707,8 +688,6 @@ describe('Model', function() {
   
   describe('destroy()', function() {
     describe('destroy(u1)', function() {
-      let User = new PyropeModel(UserType);
-  
       const beforeValidation = (fields, fieldName) => new Promise((resolve, reject) => {
         resolve({...fields, beforeValidation: true});
       });
@@ -735,7 +714,7 @@ describe('Model', function() {
       }));
   
       it('checks table count === 4', () => new Promise((resolve, reject) => {
-        pyrope.count({tableName: '_test_users'})
+        User.count()
           .then(res => resolve(Promise.all([
             expect(res).to.equal(4)
           ])))
@@ -752,8 +731,6 @@ describe('Model', function() {
     });
     
     describe('Destroy dependent', function() {
-      const Operation = new PyropeModel(OperationType);
-      
       it('setChildren(pp1, [tt1, tt2, tt3])', () => new Promise((resolve, reject) => {
         Operation.setChildren(pp1.uuid, {transactions: [tt1.uuid, tt2.uuid, tt3.uuid]})
         .then(res => {
@@ -786,18 +763,9 @@ describe('Model', function() {
   
       it('checks that tt1, tt2, tt3 have been destroyed', () => new Promise((resolve, reject) => {
         const promises = [
-          pyrope.findByIndex({
-            tableName: '_test_transactions',
-            index: {uuid: tt1.uuid}
-          }),
-          pyrope.findByIndex({
-            tableName: '_test_transactions',
-            index: {uuid: tt2.uuid}
-          }),
-          pyrope.findByIndex({
-            tableName: '_test_transactions',
-            index: {uuid: tt3.uuid}
-          })
+          Transaction.get({uuid: tt1.uuid}),
+          Transaction.get({uuid: tt2.uuid}),
+          Transaction.get({uuid: tt3.uuid}),
         ];
         
         Promise.all(promises)
@@ -815,8 +783,8 @@ describe('Model', function() {
     });
   
     describe('Destroy nullify', function() {
-      const Transaction = new PyropeModel(TransactionType);
-      const Operation = new PyropeModel(OperationType);
+      // const Transaction = new PyropeModel(TransactionType, {tablePrefix, tableSuffix});
+      // const Operation = new PyropeModel(OperationType, {tablePrefix, tableSuffix});
       
       it('destroy(tt4), nullifies pp2.tt4', () => new Promise((resolve, reject) => {
         Transaction.destroy({uuid: tt4.uuid})
@@ -852,14 +820,8 @@ describe('Model', function() {
   
       it('checks that tt5, tt6 have been destroyed', () => new Promise((resolve, reject) => {
         const promises = [
-          pyrope.findByIndex({
-            tableName: '_test_transactions',
-            index: {uuid: tt5.uuid}
-          }),
-          pyrope.findByIndex({
-            tableName: '_test_transactions',
-            index: {uuid: tt6.uuid}
-          }),
+          Transaction.get({uuid: tt5.uuid}),
+          Transaction.get({uuid: tt6.uuid}),
         ];
     
         Promise.all(promises)
@@ -876,11 +838,11 @@ describe('Model', function() {
   });
   
   describe('Associations', function() {
-    let User = new PyropeModel(UserType);
-    let Contact = new PyropeModel(ContactType);
-    let Organization = new PyropeModel(OrganizationType);
-    let Operation = new PyropeModel(OperationType);
-    let Transaction = new PyropeModel(TransactionType);
+    // let User = new PyropeModel(UserType, {tablePrefix, tableSuffix});
+    // let Contact = new PyropeModel(ContactType, {tablePrefix, tableSuffix});
+    // let Organization = new PyropeModel(OrganizationType, {tablePrefix, tableSuffix});
+    // let Operation = new PyropeModel(OperationType, {tablePrefix, tableSuffix});
+    // let Transaction = new PyropeModel(TransactionType, {tablePrefix, tableSuffix});
     
     describe('1:1', function() {
       describe('Association', function() {
@@ -915,7 +877,7 @@ describe('Model', function() {
         }));
   
         it('check assoc. table count == 1', () => new Promise((resolve, reject) => {
-          pyrope.count({tableName: '_test_contacts_users'})
+          ContactsUsers.count()
             .then(res => resolve(Promise.all([
               expect(res).to.equal(1)
             ])))
@@ -965,7 +927,7 @@ describe('Model', function() {
         }));
         
         it('check assoc. table count == 1', () => new Promise((resolve, reject) => {
-          pyrope.count({tableName: '_test_contacts_users'})
+          ContactsUsers.count()
             .then(res => resolve(Promise.all([
               expect(res).to.equal(1)
             ])))
@@ -1003,7 +965,7 @@ describe('Model', function() {
         }));
       
         it('checks that association table count === 0', () => new Promise((resolve, reject) => {
-          pyrope.count({tableName: '_test_contacts_users'})
+          ContactsUsers.count()
             .then(res => resolve(Promise.all([
               expect(res).to.equal(0)
             ])))
@@ -1055,7 +1017,7 @@ describe('Model', function() {
         }));
   
         it('checks that association table count === 3', () => new Promise((resolve, reject) => {
-          pyrope.count({tableName: '_test_operations_transactions'})
+          OperationsTransactions.count()
             .then(res => resolve(Promise.all([
               expect(res).to.equal(3)
             ])))
@@ -1112,7 +1074,7 @@ describe('Model', function() {
         }));
     
         it('checks that association table count === 3', () => new Promise((resolve, reject) => {
-          pyrope.count({tableName: '_test_operations_transactions'})
+          OperationsTransactions.count()
             .then(res => resolve(Promise.all([
               expect(res).to.equal(3)
             ])))
@@ -1244,7 +1206,7 @@ describe('Model', function() {
         }));
         
         it('checks that association table count === 0', () => new Promise((resolve, reject) => {
-          pyrope.count({tableName: '_test_operations_transactions'})
+          OperationsTransactions.count()
             .then(res => resolve(Promise.all([
               expect(res).to.equal(0)
             ])))
@@ -1286,7 +1248,7 @@ describe('Model', function() {
         }));
   
         it('check count == 1', () => new Promise((resolve, reject) => {
-          pyrope.count({tableName: '_test_contacts_organizations'})
+          ContactsOrganizations.count()
             .then(res => resolve(Promise.all([
               expect(res).to.equal(1)
             ])))
@@ -1337,7 +1299,7 @@ describe('Model', function() {
         }));
   
         it('check count == 3', () => new Promise((resolve, reject) => {
-          pyrope.count({tableName: '_test_contacts_organizations'})
+          ContactsOrganizations.count()
             .then(res => resolve(Promise.all([
               expect(res).to.equal(3)
             ])))
@@ -1365,7 +1327,7 @@ describe('Model', function() {
         }));
   
         it('check count == 4', () => new Promise((resolve, reject) => {
-          pyrope.count({tableName: '_test_contacts_organizations'})
+          ContactsOrganizations.count()
             .then(res => resolve(Promise.all([
               expect(res).to.equal(4)
             ])))
@@ -1395,7 +1357,7 @@ describe('Model', function() {
         }));
   
         it('check count == 6', () => new Promise((resolve, reject) => {
-          pyrope.count({tableName: '_test_contacts_organizations'})
+          ContactsOrganizations.count()
             .then(res => resolve(Promise.all([
               expect(res).to.equal(6)
             ])))
@@ -1447,7 +1409,7 @@ describe('Model', function() {
         }));
   
         it('check - count == 5', () => new Promise((resolve, reject) => {
-          pyrope.count({tableName: '_test_contacts_organizations'})
+          ContactsOrganizations.count()
             .then(res => resolve(Promise.all([
               expect(res).to.equal(5)
             ])))
@@ -1509,7 +1471,7 @@ describe('Model', function() {
         }));
   
         it('check - count == 3', () => new Promise((resolve, reject) => {
-          pyrope.count({tableName: '_test_contacts_organizations'})
+          ContactsOrganizations.count()
             .then(res => resolve(Promise.all([
               expect(res).to.equal(3)
             ])))
@@ -1536,7 +1498,7 @@ describe('Model', function() {
         }));
   
         it('check - count == 1', () => new Promise((resolve, reject) => {
-          pyrope.count({tableName: '_test_contacts_organizations'})
+          ContactsOrganizations.count()
             .then(res => resolve(Promise.all([
               expect(res).to.equal(1)
             ])))

@@ -1,10 +1,27 @@
 import { expect } from 'chai';
-import * as pyrope from '../../../lib';
+import { PyropeActions } from '../../../lib';
 import { findWhere } from 'underscore';
 import { v4 } from 'uuid';
 import { resetDatabase, createUser, createOrganization, createContact, createOperation, createTransaction } from '../../test_helper';
+import { TEST_TIMEOUT, tablePrefix, tableSuffix } from '../../test_helper';
 
-const TEST_TIMEOUT = 3000;
+const ContactsUsersActions = new PyropeActions({
+  tablePrefix,
+  tableName: 'contacts_users',
+  tableSuffix
+});
+
+const ContactsOrganizationsActions = new PyropeActions({
+  tablePrefix,
+  tableName: 'contacts_organizations',
+  tableSuffix
+});
+
+const OperationsTransactionsActions = new PyropeActions({
+  tablePrefix,
+  tableName: 'operations_transactions',
+  tableSuffix
+});
 
 /*
  * Test DB Schema:
@@ -40,28 +57,20 @@ describe('DynamoDB associations', function() {
   
     describe('user(u1).contact = c1', () => {
       it("start with clean table", () => {
-        return pyrope.all({
-          tableName: '_test_contacts_users'
-         
-        }).then(res => {
+        return ContactsUsersActions.all().then(res => {
           expect(res).to.have.property('Items');
           expect(res.Items).to.have.lengthOf(0);
         })
       });
     
       it("make association", () => {
-        return pyrope.associate({
-          tableName: '_test_contacts_users',
+        return ContactsUsersActions.associate({
           items: [
             {
-              // index: 'user',
-              // uuid: [u1.uuid],
               index: {user: [u1.uuid]},
               hasMany: false
             },
             {
-              // index: 'contact',
-              // uuid: [c1.uuid],
               index: {contact: [c1.uuid]},
               hasMany: false
             }
@@ -72,10 +81,7 @@ describe('DynamoDB associations', function() {
       });
     
       it("check table", () => {
-        return pyrope.all({
-          tableName: '_test_contacts_users'
-        
-        }).then(res => {
+        return ContactsUsersActions.all().then(res => {
           expect(res).to.have.property('Items');
           expect(res.Items).to.have.lengthOf(1);
           expect(res.Items[0]).to.have.property('user', u1.uuid);
@@ -87,28 +93,20 @@ describe('DynamoDB associations', function() {
   
     describe('user(u2).contact = c2', () => {
       it("start with clean table", () => {
-        return pyrope.all({
-          tableName: '_test_contacts_users'
-        
-        }).then(res => {
+        return ContactsUsersActions.all().then(res => {
           expect(res).to.have.property('Items');
           expect(res.Items).to.have.lengthOf(1);
         })
       });
     
       it("make association", () => {
-        return pyrope.associate({
-          tableName: '_test_contacts_users',
+        return ContactsUsersActions.associate({
           items: [
             {
-              // index: 'user',
-              // uuid: [u2.uuid],
               index: {user: [u2.uuid]},
               hasMany: false
             },
             {
-              // index: 'contact',
-              // uuid: [c2.uuid],
               index: {contact: [c2.uuid]},
               hasMany: false
             }
@@ -119,10 +117,7 @@ describe('DynamoDB associations', function() {
       });
     
       it("check table", () => {
-        return pyrope.all({
-          tableName: '_test_contacts_users'
-        
-        }).then(res => {
+        return ContactsUsersActions.all().then(res => {
           expect(res).to.have.property('Items');
           expect(res.Items).to.have.lengthOf(2);
           expect(res.Items[1]).to.have.property('user', u2.uuid);
@@ -134,28 +129,20 @@ describe('DynamoDB associations', function() {
   
     describe('user(u3).contact = c3', () => {
       it("start with clean table", () => {
-        return pyrope.all({
-          tableName: '_test_contacts_users'
-        
-        }).then(res => {
+        return ContactsUsersActions.all().then(res => {
           expect(res).to.have.property('Items');
           expect(res.Items).to.have.lengthOf(2);
         })
       });
     
       it("make association", () => {
-        return pyrope.associate({
-          tableName: '_test_contacts_users',
+        return ContactsUsersActions.associate({
           items: [
             {
-              // index: 'user',
-              // uuid: [u3.uuid],
               index: {user: [u3.uuid]},
               hasMany: false
             },
             {
-              // index: 'contact',
-              // uuid: [c3.uuid],
               index: {contact: c3.uuid},
               hasMany: false
             }
@@ -166,10 +153,7 @@ describe('DynamoDB associations', function() {
       });
     
       it("check table", () => {
-        return pyrope.all({
-          tableName: '_test_contacts_users'
-        
-        }).then(res => {
+        return ContactsUsersActions.all().then(res => {
           expect(res).to.have.property('Items');
           expect(res.Items).to.have.lengthOf(3);
           expect(res.Items[2]).to.have.property('user', u3.uuid);
@@ -181,30 +165,20 @@ describe('DynamoDB associations', function() {
   
     describe('user(u2).contact = c1', () => {
       it("start with clean table", () => {
-        return pyrope.all({
-          tableName: '_test_contacts_users'
-        
-        }).then(res => {
-          // console.log(JSON.stringify(res, null, 2));
-        
+        return ContactsUsersActions.all().then(res => {
           expect(res).to.have.property('Items');
           expect(res.Items).to.have.lengthOf(3);
         })
       });
     
       it("make association", () => {
-        return pyrope.associate({
-          tableName: '_test_contacts_users',
+        return ContactsUsersActions.associate({
           items: [
             {
-              // index: 'user',
-              // uuid: [u2.uuid],
               index: {user: [u2.uuid]},
               hasMany: false
             },
             {
-              // index: 'contact',
-              // uuid: [c1.uuid],
               index: {contact: [c1.uuid]},
               hasMany: false
             }
@@ -215,12 +189,7 @@ describe('DynamoDB associations', function() {
       });
     
       it("check table", () => {
-        return pyrope.all({
-          tableName: '_test_contacts_users'
-        
-        }).then(res => {
-          // console.log(JSON.stringify(res, null, 2));
-        
+        return ContactsUsersActions.all().then(res => {
           expect(res).to.have.property('Items');
           expect(res.Items).to.have.lengthOf(2);
           expect(res.Items[0]).to.have.property('user', u3.uuid);
@@ -233,30 +202,20 @@ describe('DynamoDB associations', function() {
   
     describe('contact(c3).user = u2', () => {
       it("start with clean table", () => {
-        return pyrope.all({
-          tableName: '_test_contacts_users'
-        
-        }).then(res => {
-          // console.log(JSON.stringify(res, null, 2));
-        
+        return ContactsUsersActions.all().then(res => {
           expect(res).to.have.property('Items');
           expect(res.Items).to.have.lengthOf(2);
         })
       });
     
       it("make association", () => {
-        return pyrope.associate({
-          tableName: '_test_contacts_users',
+        return ContactsUsersActions.associate({
           items: [
             {
-              // index: 'contact',
-              // uuid: [c3.uuid],
               index: {contact: [c3.uuid]},
               hasMany: false
             },
             {
-              // index: 'user',
-              // uuid: [u2.uuid],
               index: {user: [u2.uuid]},
               hasMany: false
             }
@@ -267,12 +226,7 @@ describe('DynamoDB associations', function() {
       });
     
       it("check table", () => {
-        return pyrope.all({
-          tableName: '_test_contacts_users'
-        
-        }).then(res => {
-          // console.log(JSON.stringify(res, null, 2));
-        
+        return ContactsUsersActions.all().then(res => {
           expect(res).to.have.property('Items');
           expect(res.Items).to.have.lengthOf(1);
           expect(res.Items[0]).to.have.property('user', u2.uuid);
@@ -283,17 +237,12 @@ describe('DynamoDB associations', function() {
   
     describe('dissociate(c3).user(u2)', () => {
       it("make dissociaton", () => {
-        return pyrope.dissociate({
-          tableName: '_test_contacts_users',
+        return ContactsUsersActions.dissociate({
           items: [
             {
-              // index: 'contact',
-              // uuid: c3.uuid
               index: {contact: c3.uuid},
             },
             {
-              // index: 'user',
-              // uuid: u2.uuid
               index: {user: u2.uuid},
             }
           ]
@@ -303,12 +252,7 @@ describe('DynamoDB associations', function() {
       });
      
       it("post table check", () => {
-        return pyrope.all({
-          tableName: '_test_contacts_users'
-        
-        }).then(res => {
-          // console.log(JSON.stringify(res, null, 2));
-        
+        return ContactsUsersActions.all().then(res => {
           expect(res).to.have.property('Items');
           expect(res.Items).to.have.lengthOf(0);
         })
@@ -335,30 +279,20 @@ describe('DynamoDB associations', function() {
   
     describe('operation(o1).transactions << [t1, t2]', () => {
       it("pre table check", () => {
-        return pyrope.all({
-          tableName: '_test_operations_transactions'
-        
-        }).then(res => {
-          // console.log(JSON.stringify(res, null, 2));
-        
+        return OperationsTransactionsActions.all().then(res => {
           expect(res).to.have.property('Items');
           expect(res.Items).to.have.lengthOf(0);
         })
       });
     
       it("make association", () => {
-        return pyrope.associate({
-          tableName: '_test_operations_transactions',
+        return OperationsTransactionsActions.associate({
           items: [
             {
-              // index: 'operation',
-              // uuid: o1.uuid,
               index: {operation: o1.uuid},
               hasMany: true
             },
             {
-              // index: 'transaction',
-              // uuid: [t1.uuid, t2.uuid],
               index: {transaction: [t1.uuid, t2.uuid]},
               hasMany: false
             }
@@ -369,12 +303,7 @@ describe('DynamoDB associations', function() {
       });
     
       it("post table check", () => {
-        return pyrope.all({
-          tableName: '_test_operations_transactions'
-        
-        }).then(res => {
-          // console.log(JSON.stringify(res, null, 2));
-        
+        return OperationsTransactionsActions.all().then(res => {
           expect(res).to.have.property('Items');
           expect(res.Items).to.have.lengthOf(2);
           expect(res.Items[0]).to.have.property('operation', o1.uuid);
@@ -387,30 +316,20 @@ describe('DynamoDB associations', function() {
   
     describe('operation(o1).transactions << t3', () => {
       it("pre table check", () => {
-        return pyrope.all({
-          tableName: '_test_operations_transactions'
-        
-        }).then(res => {
-          // console.log(JSON.stringify(res, null, 2));
-        
+        return OperationsTransactionsActions.all().then(res => {
           expect(res).to.have.property('Items');
           expect(res.Items).to.have.lengthOf(2);
         })
       });
     
       it("make association", () => {
-        return pyrope.associate({
-          tableName: '_test_operations_transactions',
+        return OperationsTransactionsActions.associate({
           items: [
             {
-              // index: 'operation',
-              // uuid: [o1.uuid],
               index: {operation: o1.uuid},
               hasMany: true
             },
             {
-              // index: 'transaction',
-              // uuid: t3.uuid,
               index: {transaction: t3.uuid},
               hasMany: false
             }
@@ -421,12 +340,7 @@ describe('DynamoDB associations', function() {
       });
     
       it("post table check", () => {
-        return pyrope.all({
-          tableName: '_test_operations_transactions'
-        
-        }).then(res => {
-          // console.log(JSON.stringify(res, null, 2));
-        
+        return OperationsTransactionsActions.all().then(res => {
           expect(res).to.have.property('Items');
           expect(res.Items).to.have.lengthOf(3);
           expect(res.Items[0]).to.have.property('operation', o1.uuid);
@@ -441,30 +355,20 @@ describe('DynamoDB associations', function() {
   
     describe('operation(o2).transactions << [t4, t5]', () => {
       it("pre table check", () => {
-        return pyrope.all({
-          tableName: '_test_operations_transactions'
-        
-        }).then(res => {
-          // console.log(JSON.stringify(res, null, 2));
-        
+        return OperationsTransactionsActions.all().then(res => {
           expect(res).to.have.property('Items');
           expect(res.Items).to.have.lengthOf(3);
         })
       });
     
       it("make association", () => {
-        return pyrope.associate({
-          tableName: '_test_operations_transactions',
+        return OperationsTransactionsActions.associate({
           items: [
             {
-              // index: 'operation',
-              // uuid: [o2.uuid],
               index: {operation: o2.uuid},
               hasMany: true
             },
             {
-              // index: 'transaction',
-              // uuid: [t4.uuid, t5.uuid],
               index: {transaction: [t4.uuid, t5.uuid]},
               hasMany: false
             }
@@ -475,12 +379,7 @@ describe('DynamoDB associations', function() {
       });
     
       it("post table check", () => {
-        return pyrope.all({
-          tableName: '_test_operations_transactions'
-        
-        }).then(res => {
-          // console.log(JSON.stringify(res, null, 2));
-        
+        return OperationsTransactionsActions.all().then(res => {
           expect(res).to.have.property('Items');
           expect(res.Items).to.have.lengthOf(5);
           expect(res.Items[0]).to.have.property('operation', o1.uuid);
@@ -499,30 +398,20 @@ describe('DynamoDB associations', function() {
   
     describe('operation(o1).transactions << [t1, t4]', () => {
       it("pre table check", () => {
-        return pyrope.all({
-          tableName: '_test_operations_transactions'
-        
-        }).then(res => {
-          // console.log(JSON.stringify(res, null, 2));
-        
+        return OperationsTransactionsActions.all().then(res => {
           expect(res).to.have.property('Items');
           expect(res.Items).to.have.lengthOf(5);
         })
       });
     
       it("make association", () => {
-        return pyrope.associate({
-          tableName: '_test_operations_transactions',
+        return OperationsTransactionsActions.associate({
           items: [
             {
-              // index: 'operation',
-              // uuid: [o1.uuid],
               index: {operation: [o1.uuid]},
               hasMany: true
             },
             {
-              // index: 'transaction',
-              // uuid: [t1.uuid, t4.uuid],
               index: {transaction: [t1.uuid, t4.uuid]},
               hasMany: false
             }
@@ -533,12 +422,7 @@ describe('DynamoDB associations', function() {
       });
     
       it("post table check", () => {
-        return pyrope.all({
-          tableName: '_test_operations_transactions'
-        
-        }).then(res => {
-          // console.log(JSON.stringify(res, null, 2));
-        
+        return OperationsTransactionsActions.all().then(res => {
           expect(res).to.have.property('Items');
           expect(res.Items).to.have.lengthOf(5);
           expect(res.Items[0]).to.have.property('operation', o1.uuid);
@@ -557,30 +441,20 @@ describe('DynamoDB associations', function() {
   
     describe('operation(o2).transactions << [t1, t2, t6]', () => {
       it("pre table check", () => {
-        return pyrope.all({
-          tableName: '_test_operations_transactions'
-        
-        }).then(res => {
-          // console.log(JSON.stringify(res, null, 2));
-        
+        return OperationsTransactionsActions.all().then(res => {
           expect(res).to.have.property('Items');
           expect(res.Items).to.have.lengthOf(5);
         })
       });
     
       it("make association", () => {
-        return pyrope.associate({
-          tableName: '_test_operations_transactions',
+        return OperationsTransactionsActions.associate({
           items: [
             {
-              // index: 'operation',
-              // uuid: [o2.uuid],
               index: {operation: [o2.uuid]},
               hasMany: true
             },
             {
-              // index: 'transaction',
-              // uuid: [t1.uuid, t2.uuid, t6.uuid],
               index: {transaction: [t1.uuid, t2.uuid, t6.uuid]},
               hasMany: false
             }
@@ -591,10 +465,7 @@ describe('DynamoDB associations', function() {
       });
     
       it("post table check", () => {
-        return pyrope.all({
-          tableName: '_test_operations_transactions'
-        
-        }).then(res => {
+        return OperationsTransactionsActions.all().then(res => {
           // console.log(JSON.stringify(res, null, 2));
         
           expect(res).to.have.property('Items');
@@ -618,18 +489,13 @@ describe('DynamoDB associations', function() {
   
     describe('dissociate(o1).transaction(null)', () => {
       it("make dissociaton", () => {
-        return pyrope.dissociate({
-          tableName: '_test_operations_transactions',
+        return OperationsTransactionsActions.dissociate({
           items: [
             {
-              // index: 'operation',
-              // uuid: o1.uuid
               index: {operation: o1.uuid}
             },
             {
               index: {transaction: null},
-              // index: 'transaction',
-              // uuid: null
             }
           ]
         }).then(res => {
@@ -638,12 +504,7 @@ describe('DynamoDB associations', function() {
       });
   
       it("post table check", () => {
-        return pyrope.all({
-          tableName: '_test_operations_transactions'
-      
-        }).then(res => {
-          // console.log(JSON.stringify(res, null, 2));
-      
+        return OperationsTransactionsActions.all().then(res => {
           expect(res).to.have.property('Items');
           expect(res.Items).to.have.lengthOf(4);
           expect(res.Items[0]).to.have.property('operation', o2.uuid);
@@ -660,17 +521,12 @@ describe('DynamoDB associations', function() {
 
     describe('dissociate(o1).transaction(t1)', () => {
       it("make dissociaton", () => {
-        return pyrope.dissociate({
-          tableName: '_test_operations_transactions',
+        return OperationsTransactionsActions.dissociate({
           items: [
             {
-              // index: 'operation',
-              // uuid: o2.uuid
               index: {operation: o2.uuid}
             },
             {
-              // index: 'transaction',
-              // uuid: t1.uuid
               index: {transaction: t1.uuid}
             }
           ]
@@ -680,12 +536,7 @@ describe('DynamoDB associations', function() {
       });
   
       it("post table check", () => {
-        return pyrope.all({
-          tableName: '_test_operations_transactions'
-      
-        }).then(res => {
-          // console.log(JSON.stringify(res, null, 2));
-      
+        return OperationsTransactionsActions.all().then(res => {
           expect(res).to.have.property('Items');
           expect(res.Items).to.have.lengthOf(3);
           expect(res.Items[0]).to.have.property('operation', o2.uuid);
@@ -700,17 +551,12 @@ describe('DynamoDB associations', function() {
 
     describe('dissociate(o1).transaction([t5, 56)', () => {
       it("make dissociaton", () => {
-        return pyrope.dissociate({
-          tableName: '_test_operations_transactions',
+        return OperationsTransactionsActions.dissociate({
           items: [
             {
-              // index: 'operation',
-              // uuid: o2.uuid
               index: {operation: o2.uuid}
             },
             {
-              // index: 'transaction',
-              // uuid: [t5.uuid, t6.uuid]
               index: {transaction: [t5.uuid, t6.uuid]}
             }
           ]
@@ -720,12 +566,7 @@ describe('DynamoDB associations', function() {
       });
   
       it("post table check", () => {
-        return pyrope.all({
-          tableName: '_test_operations_transactions'
-      
-        }).then(res => {
-          // console.log(JSON.stringify(res, null, 2));
-      
+        return OperationsTransactionsActions.all().then(res => {
           expect(res).to.have.property('Items');
           expect(res.Items).to.have.lengthOf(1);
           expect(res.Items[0]).to.have.property('operation', o2.uuid);
@@ -757,30 +598,20 @@ describe('DynamoDB associations', function() {
     
     describe('organization(o1).contact << c1', () => {
       it("pre table check", () => {
-        return pyrope.all({
-          tableName: '_test_contacts_organizations'
-          
-        }).then(res => {
-          // console.log(JSON.stringify(res, null, 2));
-          
+        return ContactsOrganizationsActions.all().then(res => {
           expect(res).to.have.property('Items');
           expect(res.Items).to.have.lengthOf(0);
         })
       });
       
       it("make association", () => {
-        return pyrope.associate({
-          tableName: '_test_contacts_organizations',
+        return ContactsOrganizationsActions.associate({
           items: [
             {
-              // index: 'organization',
-              // uuid: o1.uuid,
               index: {organization: o1.uuid},
               hasMany: true
             },
             {
-              // index: 'contact',
-              // uuid: c1.uuid,
               index: {contact: c1.uuid},
               hasMany: true
             }
@@ -791,12 +622,7 @@ describe('DynamoDB associations', function() {
       });
       
       it("post table check", () => {
-        return pyrope.all({
-          tableName: '_test_contacts_organizations'
-          
-        }).then(res => {
-          // console.log(JSON.stringify(res, null, 2));
-          
+        return ContactsOrganizationsActions.all().then(res => {
           expect(res).to.have.property('Items');
           expect(res.Items).to.have.lengthOf(1);
           expect(res.Items[0]).to.have.property('organization', o1.uuid);
@@ -807,18 +633,13 @@ describe('DynamoDB associations', function() {
   
     describe('organization(o1).contact << [c2, c3]', () => {
       it("make association", () => {
-        return pyrope.associate({
-          tableName: '_test_contacts_organizations',
+        return ContactsOrganizationsActions.associate({
           items: [
             {
-              // index: 'organization',
-              // uuid: o1.uuid,
               index: {organization: o1.uuid},
               hasMany: true
             },
             {
-              // index: 'contact',
-              // uuid: [c2.uuid, c3.uuid],
               index: {contact: [c2.uuid, c3.uuid]},
               hasMany: true
             }
@@ -829,12 +650,7 @@ describe('DynamoDB associations', function() {
       });
     
       it("post table check", () => {
-        return pyrope.all({
-          tableName: '_test_contacts_organizations'
-        
-        }).then(res => {
-          // console.log(JSON.stringify(res, null, 2));
-        
+        return ContactsOrganizationsActions.all().then(res => {
           expect(res).to.have.property('Items');
           expect(res.Items).to.have.lengthOf(3);
           expect(res.Items[0]).to.have.property('organization', o1.uuid);
@@ -849,18 +665,13 @@ describe('DynamoDB associations', function() {
    
     describe('contact(c1).organization << o1', () => {
       it("make association", () => {
-        return pyrope.associate({
-          tableName: '_test_contacts_organizations',
+        return ContactsOrganizationsActions.associate({
           items: [
             {
-              // index: 'contact',
-              // uuid: c1.uuid,
               index: {contact: c1.uuid},
               hasMany: true
             },
             {
-              // index: 'organization',
-              // uuid: o1.uuid,
               index: {organization: o1.uuid},
               hasMany: true
             }
@@ -871,12 +682,7 @@ describe('DynamoDB associations', function() {
       });
     
       it("post table check", () => {
-        return pyrope.all({
-          tableName: '_test_contacts_organizations'
-        
-        }).then(res => {
-          // console.log(JSON.stringify(res, null, 2));
-        
+        return ContactsOrganizationsActions.all().then(res => {
           expect(res).to.have.property('Items');
           expect(res.Items).to.have.lengthOf(3);
           expect(res.Items[0]).to.have.property('organization', o1.uuid);
@@ -891,18 +697,13 @@ describe('DynamoDB associations', function() {
   
     describe('contact(c1).organization << [o1, o2]', () => {
       it("make association", () => {
-        return pyrope.associate({
-          tableName: '_test_contacts_organizations',
+        return ContactsOrganizationsActions.associate({
           items: [
             {
-              // index: 'contact',
-              // uuid: c1.uuid,
               index: {contact: c1.uuid},
               hasMany: true
             },
             {
-              // index: 'organization',
-              // uuid: [o1.uuid, o2.uuid],
               index: {organization: [o1.uuid, o2.uuid]},
               hasMany: true
             }
@@ -913,12 +714,7 @@ describe('DynamoDB associations', function() {
       });
     
       it("post table check", () => {
-        return pyrope.all({
-          tableName: '_test_contacts_organizations'
-        
-        }).then(res => {
-          // console.log(JSON.stringify(res, null, 2));
-        
+        return ContactsOrganizationsActions.all().then(res => {
           expect(res).to.have.property('Items');
           expect(res.Items).to.have.lengthOf(4);
           expect(res.Items[0]).to.have.property('organization', o1.uuid);
@@ -935,18 +731,13 @@ describe('DynamoDB associations', function() {
   
     describe('organization(o1).contact << [c1, c2, c4]', () => {
       it("make association", () => {
-        return pyrope.associate({
-          tableName: '_test_contacts_organizations',
+        return ContactsOrganizationsActions.associate({
           items: [
             {
-              // index: 'organization',
-              // uuid: o1.uuid,
               index: {organization: o1.uuid},
               hasMany: true
             },
             {
-              // index: 'contact',
-              // uuid: [c1.uuid, c2.uuid, c4.uuid],
               index: {contact: [c1.uuid, c2.uuid, c4.uuid]},
               hasMany: true
             }
@@ -957,12 +748,7 @@ describe('DynamoDB associations', function() {
       });
     
       it("post table check", () => {
-        return pyrope.all({
-          tableName: '_test_contacts_organizations'
-        
-        }).then(res => {
-          // console.log(JSON.stringify(res, null, 2));
-        
+        return ContactsOrganizationsActions.all().then(res => {
           expect(res).to.have.property('Items');
           expect(res.Items).to.have.lengthOf(5);
           expect(res.Items[0]).to.have.property('organization', o1.uuid);
@@ -981,18 +767,13 @@ describe('DynamoDB associations', function() {
   
     describe('organization([o1, o2]).contact << [c2, c1, c4]', () => {
       it("make association", () => {
-        return pyrope.associate({
-          tableName: '_test_contacts_organizations',
+        return ContactsOrganizationsActions.associate({
           items: [
             {
-              // index: 'organization',
-              // uuid: [o1.uuid, o2.uuid],
               index: {organization: [o1.uuid, o2.uuid]},
               hasMany: true
             },
             {
-              // index: 'contact',
-              // uuid: [c2.uuid, c1.uuid, c4.uuid],
               index: {contact: [c2.uuid, c1.uuid, c4.uuid]},
               hasMany: true
             }
@@ -1003,12 +784,7 @@ describe('DynamoDB associations', function() {
       });
     
       it("post table check", () => {
-        return pyrope.all({
-          tableName: '_test_contacts_organizations'
-        
-        }).then(res => {
-          // console.log(JSON.stringify(res, null, 2));
-        
+        return ContactsOrganizationsActions.all().then(res => {
           expect(res).to.have.property('Items');
           expect(res.Items).to.have.lengthOf(7);
           expect(res.Items[0]).to.have.property('organization', o1.uuid);
@@ -1031,18 +807,13 @@ describe('DynamoDB associations', function() {
     
     describe('contact(c1).organization << [o2, o3]', () => {
       it("make association", () => {
-        return pyrope.associate({
-          tableName: '_test_contacts_organizations',
+        return ContactsOrganizationsActions.associate({
           items: [
             {
-              // index: 'contact',
-              // uuid: [c1.uuid],
               index: {contact: [c1.uuid]},
               hasMany: true
             },
             {
-              // index: 'organization',
-              // uuid: [o2.uuid, o3.uuid],
               index: {organization: [o2.uuid, o3.uuid]},
               hasMany: true
             }
@@ -1053,12 +824,7 @@ describe('DynamoDB associations', function() {
       });
     
       it("post table check", () => {
-        return pyrope.all({
-          tableName: '_test_contacts_organizations'
-        
-        }).then(res => {
-          // console.log(JSON.stringify(res, null, 2));
-        
+        return ContactsOrganizationsActions.all().then(res => {
           expect(res).to.have.property('Items');
           expect(res.Items).to.have.lengthOf(8);
           expect(res.Items[0]).to.have.property('organization', o1.uuid);
@@ -1083,18 +849,13 @@ describe('DynamoDB associations', function() {
   
     describe('organization(o1!).contact =  c1', () => {
       it("make association", () => {
-        return pyrope.associate({
-          tableName: '_test_contacts_organizations',
+        return ContactsOrganizationsActions.associate({
           items: [
             {
-              // index: 'organization',
-              // uuid: o1.uuid,
               index: {organization: o1.uuid},
               hasMany: false
             },
             {
-              // index: 'contact',
-              // uuid: c1.uuid,
               index: {contact: c1.uuid},
               hasMany: true
             }
@@ -1105,12 +866,7 @@ describe('DynamoDB associations', function() {
       });
     
       it("post table check", () => {
-        return pyrope.all({
-          tableName: '_test_contacts_organizations'
-        
-        }).then(res => {
-          // console.log(JSON.stringify(res, null, 2));
-        
+        return ContactsOrganizationsActions.all().then(res => {
           expect(res).to.have.property('Items');
           expect(res.Items).to.have.lengthOf(5);
           expect(res.Items[0]).to.have.property('organization', o2.uuid);
@@ -1129,17 +885,12 @@ describe('DynamoDB associations', function() {
   
     describe('dissociate(c4, null)', () => {
       it("make dissociaton", () => {
-        return pyrope.dissociate({
-          tableName: '_test_contacts_organizations',
+        return ContactsOrganizationsActions.dissociate({
           items: [
             {
-              // index: 'contact',
-              // uuid: c4.uuid
               index: {contact: c4.uuid}
             },
             {
-              // index: 'organization',
-              // uuid: null
               index: {organization: null}
             }
           ]
@@ -1149,12 +900,7 @@ describe('DynamoDB associations', function() {
       });
     
       it("post table check", () => {
-        return pyrope.all({
-          tableName: '_test_contacts_organizations'
-        
-        }).then(res => {
-          // console.log(JSON.stringify(res, null, 2));
-        
+        return ContactsOrganizationsActions.all().then(res => {
           expect(res).to.have.property('Items');
           expect(res.Items).to.have.lengthOf(4);
           expect(res.Items[0]).to.have.property('contact', c1.uuid);
@@ -1171,17 +917,12 @@ describe('DynamoDB associations', function() {
   
     describe('dissociate(o2, c1)', () => {
       it("make dissociaton", () => {
-        return pyrope.dissociate({
-          tableName: '_test_contacts_organizations',
+        return ContactsOrganizationsActions.dissociate({
           items: [
             {
-              // index: 'organization',
-              // uuid: o2.uuid
               index: {organization: o2.uuid}
             },
             {
-              // index: 'contact',
-              // uuid: c1.uuid
               index: {contact: c1.uuid}
             }
           ]
@@ -1191,12 +932,7 @@ describe('DynamoDB associations', function() {
       });
     
       it("post table check", () => {
-        return pyrope.all({
-          tableName: '_test_contacts_organizations'
-        
-        }).then(res => {
-          // console.log(JSON.stringify(res, null, 2));
-        
+        return ContactsOrganizationsActions.all().then(res => {
           expect(res).to.have.property('Items');
           expect(res.Items).to.have.lengthOf(3);
           expect(res.Items[0]).to.have.property('contact', c2.uuid);
@@ -1211,17 +947,12 @@ describe('DynamoDB associations', function() {
   
     describe('dissociate(c1, [o3, o1])', () => {
       it("make dissociaton", () => {
-        return pyrope.dissociate({
-          tableName: '_test_contacts_organizations',
+        return ContactsOrganizationsActions.dissociate({
           items: [
             {
-              // index: 'contact',
-              // uuid: c1.uuid
               index: {contact: c1.uuid}
             },
             {
-              // index: 'organization',
-              // uuid: [o3.uuid, o1.uuid]
               index: {organization: [o3.uuid, o1.uuid]}
             }
           ]
@@ -1231,12 +962,7 @@ describe('DynamoDB associations', function() {
       });
     
       it("post table check", () => {
-        return pyrope.all({
-          tableName: '_test_contacts_organizations'
-        
-        }).then(res => {
-          // console.log(JSON.stringify(res, null, 2));
-        
+        return ContactsOrganizationsActions.all().then(res => {
           expect(res).to.have.property('Items');
           expect(res.Items).to.have.lengthOf(1);
           expect(res.Items[0]).to.have.property('contact', c2.uuid);
@@ -1247,8 +973,7 @@ describe('DynamoDB associations', function() {
   
     describe('dissociate(c1, o3) = false', () => {
       it("make dissociaton", () => new Promise((resolve, reject) => {
-        pyrope.dissociate({
-          tableName: '_test_contacts_organizations',
+        ContactsOrganizationsActions.dissociate({
           items: [
             {index: {contact: c1.uuid}},
             {index: {organization: o3.uuid}}
@@ -1261,12 +986,7 @@ describe('DynamoDB associations', function() {
       }));
     
       it("post table check", () => {
-        return pyrope.all({
-          tableName: '_test_contacts_organizations'
-        
-        }).then(res => {
-          // console.log(JSON.stringify(res, null, 2));
-        
+        return ContactsOrganizationsActions.all().then(res => {
           expect(res).to.have.property('Items');
           expect(res.Items).to.have.lengthOf(1);
           expect(res.Items[0]).to.have.property('contact', c2.uuid);
@@ -1323,64 +1043,46 @@ describe('DynamoDB associations', function() {
     
     describe('associate o1..4 with c1..4', () => {
       it('Generates associations', () => new Promise((resolve, reject) => {
-        pyrope.associate({
-          tableName: '_test_contacts_organizations',
+        ContactsOrganizationsActions.associate({
           items: [
             {
               index: {organization: o1.uuid},
               hasMany: true
             },
             {
-              // index: 'contact',
-              // uuid: [c1.uuid, c2.uuid, c3.uuid],
               index: {contact: [c1.uuid, c2.uuid, c3.uuid]},
               hasMany: true
             }
           ]
-        }).then(() => pyrope.associate({
-          tableName: '_test_contacts_organizations',
+        }).then(() => ContactsOrganizationsActions.associate({
           items: [
             {
-              // index: 'organization',
-              // uuid: o2.uuid,
               index: {organization: o2.uuid},
               hasMany: true
             },
             {
-              // index: 'contact',
-              // uuid: [c1.uuid],
               index: {contact: [c1.uuid]},
               hasMany: true
             }
           ]
-        })).then(() => pyrope.associate({
-          tableName: '_test_contacts_organizations',
+        })).then(() => ContactsOrganizationsActions.associate({
           items: [
             {
-              // index: 'organization',
-              // uuid: [o3.uuid],
               index: {organization: [o3.uuid]},
               hasMany: true
             },
             {
-              // index: 'contact',
-              // uuid: [c2.uuid],
               index: {contact: [c2.uuid]},
               hasMany: true
             }
           ]
-        })).then(() => pyrope.associate({
-          tableName: '_test_contacts_organizations',
+        })).then(() => ContactsOrganizationsActions.associate({
           items: [
             {
-              // index: 'organization',
-              // uuid: o4.uuid,
               index: {organization: o4.uuid},
               hasMany: true
             },
             {
-              // index: 'contact',
-              // uuid: c4.uuid,
               index: {contact: c4.uuid},
               hasMany: true
             }
@@ -1391,11 +1093,7 @@ describe('DynamoDB associations', function() {
       }));
     
       it('Checks table', () => new Promise((resolve, reject) => {
-        pyrope.all({
-          tableName: '_test_contacts_organizations'
-        }).then(res => {
-          // console.log(JSON.stringify(res, null, 2));
-          
+        ContactsOrganizationsActions.all().then(res => {
           resolve(Promise.all([
             expect(res.Items).not.to.equal(undefined),
             expect(res.Items).to.have.lengthOf(6)
@@ -1416,8 +1114,7 @@ describe('DynamoDB associations', function() {
         // c4.uuid = 'c4';
   
         // o1, o2, o3, o4
-        return pyrope.getAssociations({
-          tableName: '_test_contacts_organizations',
+        return ContactsOrganizationsActions.getAssociations({
           items: [
             {index: {organization: o1.uuid}},
             {index: 'contact'}
@@ -1427,8 +1124,7 @@ describe('DynamoDB associations', function() {
           expect(res).to.have.members([
             c1.uuid,c2.uuid,c3.uuid
           ])
-        ])).then(() => pyrope.getAssociations({
-          tableName: '_test_contacts_organizations',
+        ])).then(() => ContactsOrganizationsActions.getAssociations({
           items: [
             {index: {organization: o2.uuid}},
             {index: 'contact'}
@@ -1438,8 +1134,7 @@ describe('DynamoDB associations', function() {
           expect(res).to.have.members([
             c1.uuid
           ])
-        ])).then(() => pyrope.getAssociations({
-          tableName: '_test_contacts_organizations',
+        ])).then(() => ContactsOrganizationsActions.getAssociations({
           items: [
             {index: {organization: o3.uuid}},
             {index: 'contact'}
@@ -1449,8 +1144,7 @@ describe('DynamoDB associations', function() {
           expect(res).to.have.members([
             c2.uuid
           ])
-        ])).then(() => pyrope.getAssociations({
-          tableName: '_test_contacts_organizations',
+        ])).then(() => ContactsOrganizationsActions.getAssociations({
           items: [
             {index: {organization: o4.uuid}},
             {index: 'contact'}
@@ -1463,8 +1157,7 @@ describe('DynamoDB associations', function() {
         ]))
           
         // c1, c2, c3, c4
-          .then(() => pyrope.getAssociations({
-            tableName: '_test_contacts_organizations',
+          .then(() => ContactsOrganizationsActions.getAssociations({
             items: [
               {index: {contact: c1.uuid}},
               {index: 'organization'}
@@ -1474,8 +1167,7 @@ describe('DynamoDB associations', function() {
           expect(res).to.have.members([
             o1.uuid, o2.uuid
           ])
-        ])).then(() => pyrope.getAssociations({
-          tableName: '_test_contacts_organizations',
+        ])).then(() => ContactsOrganizationsActions.getAssociations({
             items: [
               {index: {contact: c2.uuid}},
               {index: 'organization'}
@@ -1485,8 +1177,7 @@ describe('DynamoDB associations', function() {
           expect(res).to.have.members([
             o1.uuid, o3.uuid
           ])
-        ])).then(() => pyrope.getAssociations({
-          tableName: '_test_contacts_organizations',
+        ])).then(() => ContactsOrganizationsActions.getAssociations({
             items: [
               {index: {contact: c3.uuid}},
               {index: 'organization'}
@@ -1496,8 +1187,7 @@ describe('DynamoDB associations', function() {
           expect(res).to.have.members([
             o1.uuid
           ])
-        ])).then(() => pyrope.getAssociations({
-          tableName: '_test_contacts_organizations',
+        ])).then(() => ContactsOrganizationsActions.getAssociations({
             items: [
               {index: {contact: c4.uuid}},
               {index: 'organization'}

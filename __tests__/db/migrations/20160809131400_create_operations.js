@@ -1,6 +1,6 @@
-var TABLE_NAME = 'operations';
+var TABLE_NAME = 'qtz-operations';
 
-TABLE_NAME = `${process.env.NODE_ENV === 'test' ? '_test_' : ''}${TABLE_NAME}`;
+TABLE_NAME = `${TABLE_NAME}${process.env.NODE_ENV ? '-' + process.env.NODE_ENV : ''}`;
 
 module.exports.default = {
   up: {

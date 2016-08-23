@@ -13,10 +13,6 @@ export const tableSuffix = '-test';
 export const dynaliteSetup = () => dynaliteServer.listenAsync(DYNALITE_PORT);
 export const dynaliteTeardown = () => dynaliteServer.closeAsync();
 
-// Set environment variables
-process.env.NODE_ENV = 'test';
-process.env.AUTH_TOKEN_SECRET = 'secret';
-
 console.log('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~');
 console.log('Node ENV: ', process.env.NODE_ENV);
 

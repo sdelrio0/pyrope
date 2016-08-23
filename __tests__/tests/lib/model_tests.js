@@ -87,6 +87,7 @@ describe('Model', function() {
     it('initializes model with correct tableName', () => new Promise((resolve, reject) => {
       resolve(Promise.all([
         expect(User.name).to.equal(User.name),
+        expect(User.humanName).to.equal('User'),
         expect(User.fullTableName).to.equal('qtz-users-test'),
         expect(User.fields).to.be.an('object')
       ]));

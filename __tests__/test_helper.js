@@ -1,5 +1,5 @@
 import { exec } from 'child_process';
-import * as pyrope from '../lib';
+import { PyropeActions } from '../lib';
 import { v4 } from 'uuid';
 import dynalite from 'dynalite';
 import Promise from 'bluebird';
@@ -7,9 +7,10 @@ import Promise from 'bluebird';
 export const dynaliteServer = Promise.promisifyAll(dynalite({path: './.dynamodb', createTableMs: 1, updateTableMs: 1, deleteTableMs: 1}));
 export const DYNALITE_PORT = 8000;
 export const TEST_TIMEOUT = 5000;
+export const tablePrefix = 'qtz-';
+export const tableSuffix = '-test';
 
 export const dynaliteSetup = () => dynaliteServer.listenAsync(DYNALITE_PORT);
-
 export const dynaliteTeardown = () => dynaliteServer.closeAsync();
 
 // Set environment variables
@@ -28,13 +29,15 @@ export const resetDatabase = ( ) => {
   });
 };
 
-export const createItem = (tableName, fields) =>
-  pyrope.create({
-    tableName: `_test_${tableName}`,
-    fields: {
-      ...fields
-    }
+export const createItem = (tableName, fields) => {
+  const actions = new PyropeActions({
+    tablePrefix,
+    tableName,
+    tableSuffix,
   });
+  
+  return actions.create({fields})
+};
 
 export const createUser = (fields) => createItem('users', fields);
 export const createContact = (fields) => createItem('contacts', fields);

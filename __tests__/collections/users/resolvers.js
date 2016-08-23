@@ -1,6 +1,6 @@
-import PyropeModel from '../../../lib';
+import { PyropeModel } from '../../../lib';
 import { ContactType } from '../contacts/types';
 
 export const getContact = (source) =>
-  new PyropeModel(ContactType, { table: '_test_contacts' })
+  new PyropeModel(ContactType, { tablePrefix: 'qtz-', tableSuffix: '-test' })
     .get({uuid: source.uuid});

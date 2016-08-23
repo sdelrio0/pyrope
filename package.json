@@ -6,7 +6,7 @@
   "scripts": {
     "prebuild": "rimraf dist",
     "build": "babel --copy-files --out-dir dist lib",
-    "test": "source .env.test && mocha --compilers js:babel-core/register --require ./__tests__/test_helper.js --recursive ./__tests__/tests",
+    "test": "./scripts/test.sh",
     "test:watch": "npm run test -- -w",
     "cover": "nyc --reporter=lcov npm run test",
     "cover:report": "npm run cover && nyc report",
